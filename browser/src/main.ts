@@ -36,7 +36,10 @@ async function start() {
     stencil: true,
     preserveDrawingBuffer: false,
   });
-  engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
+  // Cap at 1.5 pixels per CSS pixel; a larger scaling level renders fewer pixels.
+  const renderScale = () =>
+    1 / Math.min(Math.max(window.devicePixelRatio || 1, 1), 1.5);
+  engine.setHardwareScalingLevel(renderScale());
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.75, 0.82, 0.83, 1);
   scene.fogMode = Scene.FOGMODE_EXP2;
@@ -53,8 +56,10 @@ async function start() {
   sun.position.set(25, 40, -20);
   sun.intensity = 0.85;
   const shadows = new ShadowGenerator(1024, sun);
-  shadows.useBlurExponentialShadowMap = true;
-  shadows.blurKernel = 16;
+  shadows.usePercentageCloserFiltering = true;
+  shadows.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
+  shadows.bias = 0.0005;
+  shadows.normalBias = 0.015;
   const camera = new FreeCamera("Follow", new Vector3(0, 3, -18), scene);
   camera.minZ = 0.1;
   camera.maxZ = 300;
@@ -404,6 +409,7 @@ async function start() {
     }
   });
   window.addEventListener("resize", () => {
+    engine.setHardwareScalingLevel(renderScale());
     engine.resize();
     pe.resize();
   });

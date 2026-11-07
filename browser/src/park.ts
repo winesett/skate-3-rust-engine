@@ -3,12 +3,15 @@ import {
   MeshBuilder,
   StandardMaterial,
   Color3,
-  Vector3,
+  Vector4,
   Mesh,
   VertexData,
   DynamicTexture,
+  Texture,
 } from "@babylonjs/core";
 import type { Physics } from "./physics";
+import { rampGeometry } from "./ramp";
+import { concreteTexture } from "./surfaces";
 export function buildPark(scene: Scene, physics: Physics) {
   const material = (name: string, hex: string) => {
     const m = new StandardMaterial(name, scene);
@@ -22,6 +25,9 @@ export function buildPark(scene: Scene, physics: Physics) {
     dark = material("Deck grip", "#253e35"),
     white = material("Paint", "#edf1d2"),
     orange = material("Clay", "#ce7c50");
+  concrete.diffuseTexture = concreteTexture(scene);
+  const slabMaterial = concrete.clone("Concrete slabs");
+  slabMaterial.diffuseTexture = concreteTexture(scene, true);
   const solids: Mesh[] = [];
   const box = (
     name: string,
@@ -36,7 +42,19 @@ export function buildPark(scene: Scene, physics: Physics) {
   ) => {
     const m = MeshBuilder.CreateBox(
       name,
-      { width: w, height: h, depth: d },
+      {
+        width: w,
+        height: h,
+        depth: d,
+        faceUV: [
+          new Vector4(0, 0, w / 6, h / 6),
+          new Vector4(0, 0, w / 6, h / 6),
+          new Vector4(0, 0, d / 6, h / 6),
+          new Vector4(0, 0, d / 6, h / 6),
+          new Vector4(0, 0, w / 6, d / 6),
+          new Vector4(0, 0, w / 6, d / 6),
+        ],
+      },
       scene,
     );
     m.position.set(x, y, z);
@@ -49,7 +67,7 @@ export function buildPark(scene: Scene, physics: Physics) {
     return m;
   };
   box("Endless field", 0, -0.65, 0, 400, 0.2, 400, green, false);
-  box("Park slab", 0, -0.5, 0, 80, 1, 80);
+  box("Park slab", 0, -0.5, 0, 80, 1, 80, slabMaterial);
   // Broad banks and a tabletop: the visual and collision shapes use identical vertices.
   const ramp = (
     name: string,
@@ -60,47 +78,10 @@ export function buildPark(scene: Scene, physics: Physics) {
     h: number,
     reverse = false,
   ) => {
-    const dir = reverse ? -1 : 1,
-      positions = [
-        -w / 2,
-        0,
-        (-dir * l) / 2,
-        w / 2,
-        0,
-        (-dir * l) / 2,
-        w / 2,
-        h,
-        (dir * l) / 2,
-        -w / 2,
-        h,
-        (dir * l) / 2,
-        -w / 2,
-        -0.3,
-        (-dir * l) / 2,
-        w / 2,
-        -0.3,
-        (-dir * l) / 2,
-        w / 2,
-        -0.3,
-        (dir * l) / 2,
-        -w / 2,
-        -0.3,
-        (dir * l) / 2,
-      ];
-    const indices = [
-      0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 3, 7, 6, 3, 6, 2, 0,
-      4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5,
-    ];
-    if (reverse)
-      for (let i = 0; i < indices.length; i += 3)
-        [indices[i + 1], indices[i + 2]] = [indices[i + 2], indices[i + 1]];
+    const geometry = rampGeometry(w, l, h, reverse);
     const m = new Mesh(name, scene),
       v = new VertexData();
-    v.positions = positions;
-    v.indices = indices;
-    const normals: number[] = [];
-    VertexData.ComputeNormals(positions, indices, normals);
-    v.normals = normals;
+    Object.assign(v, geometry);
     v.applyToMesh(m);
     m.position.set(x, 0, z);
     m.material = concrete;
@@ -128,10 +109,6 @@ export function buildPark(scene: Scene, physics: Physics) {
   box("Flat bar", 7, 0.65, -3, 0.13, 0.13, 6, edge);
   for (const z of [-5.5, -0.5])
     box("Rail support", 7, 0.3, z, 0.1, 0.6, 0.1, edge);
-  for (let x = -36; x <= 36; x += 6)
-    box("Slab seam", x, 0.006, 0, 0.018, 0.009, 78, edge, false);
-  for (let z = -36; z <= 36; z += 6)
-    box("Slab seam", 0, 0.006, z, 78, 0.009, 0.018, edge, false);
   for (const x of [-30, 30]) {
     box("Park stripe", x, 0.012, 0, 0.18, 0.012, 70, white, false);
     for (const z of [-25, -12, 1, 14, 27]) {
@@ -161,14 +138,16 @@ export function buildPark(scene: Scene, physics: Physics) {
   sign.position.set(-24, 4.5, 36);
   const tex = new DynamicTexture(
     "Original park sign",
-    { width: 1024, height: 342 },
+    { width: 1024, height: 512 },
     scene,
-    false,
+    true,
+    Texture.TRILINEAR_SAMPLINGMODE,
   );
+  tex.anisotropicFilteringLevel = 8;
   tex.drawText(
     "THE YARD",
     null,
-    205,
+    295,
     "bold 120px Arial",
     "#edff85",
     "#203d32",

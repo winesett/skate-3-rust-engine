@@ -27,3 +27,11 @@ npm run dev
 ```
 
 See README.md and browser/docs/CHARACTERS.md for setup, controls, model import and static deployment. Vite config/dependency edits can restart the server and disconnect an open preview; navigate again after readiness. Tailscale was observed stopped; no remote preview was claimed.
+
+## Texture/rendering fix — 2026-11-07
+
+- Replaced overlapping seam strips with a seamless concrete texture; trilinear mipmaps and anisotropic filtering reduce distant shimmer.
+- Corrected wedge winding/outward normals and split face vertices so ramp edges shade cleanly. Added metre-based UVs to ramps and boxes.
+- Enabled mipmapping on the sign and PCF shadow filtering with explicit depth/normal bias.
+- Corrected inverted high-DPI render scaling: on a DPR 2 display the QA canvas now renders 1440 pixels for 960 CSS pixels, rather than undersampling.
+- Verified surfaces in desktop Chrome while pushing and orbiting; final browser state reports about 60 FPS. Six Node tests pass (including forward/reverse ramp winding/normal regressions), and the TypeScript/production build passes.
