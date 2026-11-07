@@ -1,99 +1,95 @@
-<p align="center">
-  <img src="docs/images/skating-crab.png" alt="Rust crab riding a skateboard" width="480">
-</p>
+# SkatePlus — playable browser prototype
 
-# Skate 3 Rust Engine
+A local skateboarding game built inside a fork of [SK8-ENGINE/skate-3-rust-engine](https://github.com/SK8-ENGINE/skate-3-rust-engine). Original procedural park, skateboard and rigged character; no EA game assets are needed or included. Original upstream documentation and attribution are preserved in [README-UPSTREAM.md](README-UPSTREAM.md).
 
-A Rust and Bevy skating project built from Skate 3 reverse-engineering research.
-Includes skating, tricks, grinds, offboard movement, difficulty settings and
-`.skate` map support. Gameplay parity is still a work in progress.
+## Start
 
-## History
+Requires Node.js 20.19+ or 22.12+ (Node 24 tested). The compiled Rust physics module is included, so Rust is only needed when modifying physics.
 
-Before this rewrite existed, **dumbad** spent more than two years reverse
-engineering Skate 3 and building the tools needed to understand and work with
-it. That meant countless hours digging through undocumented file formats,
-animation data, and game interaction systems, then testing those discoveries
-in the original game. Much of that work is collected in
-[DumbadsSkate3ModdingTools](https://github.com/Ethanw05/DumbadsSkate3ModdingTools),
-including tools for custom maps, meshes, collision, challenges, and DLC.
+```sh
+cd browser
+npm ci
+npm run dev
+```
 
-That research laid the groundwork for this project. Chasm later worked on a
-recompilation and a custom renderer based on dumbad's earlier renderer work,
-before moving into the Rust/Bevy rewrite. The rewrite's development time tells
-only part of the story: the knowledge and tools it relies on took years of
-work to establish.
+Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live reload. The initial JavaScript download can take a few seconds. Use a desktop browser with WebGL 2, keyboard, or a standard gamepad. This is a real-time 3D game with a Rust/Rapier collision world, not a recorded demo.
 
-## AI usage
+## Controls
 
-AI coding tools were used to develop this rewrite, but none of it would have
-been possible without dumbad's extraordinary effort to reverse engineer the
-original game. The AI had years of hard-earned research and working tools to
-build on. Describing the project as simply “AI rewriting Skate 3” leaves out
-the work that made it possible in the first place.
+| Action | Keyboard | Standard gamepad |
+| --- | --- | --- |
+| Push | W / Up | A / bottom face |
+| Turn | A / D | Left stick |
+| Brake | S / Down | B / right face |
+| Ollie | Space | X / left face or LT |
+| Kickflip in air | J | Y / top face |
+| Heelflip in air | K | LB |
+| Pop shove-it in air | L | RB |
+| Camera orbit | Left / Right arrows | Right stick X |
+| Reset position | R / Reset button | Back / View |
+| Character workshop | C / Character button | Use mouse |
+| Fullscreen | F / fullscreen button | Use mouse |
+| Physics diagnostics | F2 | — |
+| Debug slow motion / pause / single step | T / P / N while F2 is open | — |
 
-AI helped turn that knowledge into a new implementation; it does not replace
-credit for discovering how the game works. This is still a work in progress,
-and using original assets or showing working tricks does not mean every
-system behaves exactly like the original.
+Ollie first, then choose a trick while airborne. Give flips roughly half a second to complete. Completed tricks score on landing; late flips bail without points. Reset preserves the session score. The workshop pauses physics. Alt-tab clears held keys. Click the game after interacting with another application.
 
-## Play
+## Custom characters
 
-[Download Experimental](https://github.com/SK8-ENGINE/skate-3-rust-engine/releases/tag/experimental).
-Successful `main` builds replace this prerelease. Choose **Latest** in Updates
-for experimental updates; **Stable** is the default.
+Press **C**, select a GLB (preferred) or a glTF together with its .bin/textures, inspect the rig and animation preview, adjust height and facing, and choose **Use this character**. Files and adjustments persist in this browser via IndexedDB; nothing is uploaded. Import limit is 50 MB total. Imported characters do not change physics.
 
-Extract the Windows release ZIP and run `skate3rust.exe`. Select your Skate 3
-Xbox 360 ISO, or select `default.xex` in an extracted game folder. Keep its
-`data` folder alongside it. Setup prepares the skater, animations and all disc maps, then
-starts University. The original scoring and session-marker HUD assets are also
-exported automatically during setup. No Blender, Python or Rust installation is needed.
-ISO extraction needs internet access. The first conversion can take a while.
+For a source-controlled local catalog, put models in `assets/characters/custom/` and run `npm run characters` from `browser/`. See [character specifications](browser/docs/CHARACTERS.md), including the supported bone names and retargeting limits.
 
-Use a compatible gamepad to play. SDL3 supports Xbox/XInput, PlayStation,
-Switch and generic HID controllers; XInput remains available as a Windows
-fallback. Escape opens graphics, difficulty and map settings. Maps can be
-switched without restarting the game.
+## Architecture and scope
 
-**Skate 3 assets are not included.** Your converted files stay in
-the `data` folder beside your executable. Each freshly unpacked copy runs its
-own setup; it does not adopt another installation. In-place updates refresh
-only changed asset groups.
+- `browser/physics/`: isolated Rust/WASM host, fixed 120 Hz skating controller. Depends directly on unchanged upstream `skate-dynamics` and `skate-core` path crates.
+- `skate-dynamics::DynamicsWorld`: original upstream Rapier 0.35.3 integration supplies collision shapes, gravity, continuous collision detection, contact resolution, and ray queries.
+- `skate-core::riding::steering::calculate_tilt`: reused steering calculation with original prototype tuning graphs. `skate-core::camera::ScalarTracker`: reused follow-camera tracking.
+- `browser/src/`: Babylon.js WebGL 2 rendering, scene and character import, input, HUD and scoring display. Camera ray tests prevent clipping through park obstacles.
+- `assets/characters/custom/yard-skater.glb`: original 15-bone skinned model with five animation clips; reproducible with `python3 browser/scripts/generate-character.py`.
+- Existing Bevy desktop engine remains available unchanged. This milestone is an isolated browser host, **not a complete Bevy/WebGPU port or parity recreation**. Its controller, trick state machine, scoring rules and visual animation are new prototype systems. Full original gameplay requires retail graphs/animation data that are deliberately not bundled.
 
-## Build
+The engine audit and foundation decision are in [AUDIT.md](docs/skateplus/AUDIT.md). Verified milestones and limitations are tracked in [PROGRESS.md](docs/skateplus/PROGRESS.md).
 
-Requires Windows, Rust with the MSVC toolchain, and LLVM installed in its default
-location. Run `BUILD.bat` to build, then `PLAY.bat` to launch the test world.
-`PLAY.bat` opens your saved map (University by default); use the in-game menu to switch maps, or drag a `.skate` file onto `PLAY.bat`. An SDL3-compatible gamepad is required for gameplay;
-Escape opens difficulty and graphics settings.
+## Build and verify
 
-Development builds use a prepared asset set in `assets/private/` or the
-installed asset directory. `scripts/Build-Release.ps1` builds the portable Windows
-package and requires Python 3.13. GitHub Actions builds `main` automatically;
-numbered releases are published separately.
+To change Rust physics, install stable Rust and add the WASM target, then:
 
-Custom animations and climbing support remain available, but no custom clips
-are shipped. The included format-demo map is original procedural content.
+```sh
+rustup target add wasm32-unknown-unknown
+./browser/scripts/build-physics.sh
+cargo test --manifest-path browser/physics/Cargo.toml
+cd browser
+npm test
+npm run build
+```
 
-Implementation notes are in [`docs/`](docs/). Patched Bevy dependencies and
-their licenses are in [`vendor/`](vendor/). This is an unofficial project,
-not affiliated with EA.
+The separate Cargo workspace avoids compiling native Bevy, SDL, audio, and asset-conversion dependencies for the web. Lockfiles pin dependencies. After changing Rust dependencies, regenerate the bundled third-party notices with `python3 browser/scripts/dependency-notices.py`. `npm test` instantiates the actual shipped WASM in Node and checks movement, all tricks, scoring, a convex ramp, a solid wall, and reset. `npm run build` includes strict TypeScript checking. Rust source edits require rebuilding WASM and refreshing the page; they are not hot-reloaded.
 
-## Advanced diagnostics
+## Static deployment
 
-Windows builds support opt-in [performance timeline capture](docs/performance-tracing.md)
-through the `--trace` CLI option, including optional GPU pass diagnostics.
+```sh
+cd browser
+npm ci
+npm run characters
+npm test
+npm run build
+npm run preview
+```
 
-## License
+Deploy **all of `browser/dist/`** to any static HTTPS host (GitHub Pages, Netlify, Cloudflare Pages, etc.). Relative asset paths support subdirectories. Serve `.wasm` as `application/wasm`; the loader also supports hosts with a generic MIME type. No server, API key, cross-origin isolation or asset CDN is required. Gamepad support normally requires HTTPS or localhost. This delivery has not been publicly deployed. For physics changes, rebuild the WASM before the static build.
 
-Copyright (c) 2026 dumbad and the Skate 3 Rust Engine contributors.
-Unless otherwise noted, this project's original code is licensed under the
-[GNU General Public License version 3 only](LICENSE) (`GPL-3.0-only`).
-You may use, modify, and distribute it, including commercially. If you distribute
-a modified version or a binary of the covered software, you must also make its
-corresponding source available under GPLv3 and preserve the required notices.
+For GPL distribution, publish the corresponding complete source of the exact binary, preserve this repository's license and upstream notices, include the dependency licenses, and offer source alongside your build. `npm run build` copies license/source notices into `dist/`. Update its source URL to the exact release commit before a public release. Do not add unlicensed character or EA assets to the deploy directory.
 
-Third-party code retains its existing licenses and copyright notices, including
-the vendored Bevy crates and tooling under `tools/vendor/`. This license does
-not grant rights to Electronic Arts' game code, data, assets, or trademarks,
-or to content supplied by other map and mod authors.
+## Known limits / next work
+
+- Arcade single-sphere rider collision; the visible board and humanoid are decoupled from the collider. No original articulated-board or ragdoll simulation, grinds/manuals, replay, multiplayer, sound, or retail animation graph parity.
+- Convex banks, tabletop, ledges and flat bar; the flat bar collides but has no grind attachment system. Some obstacle edges stop the rider; ollie over them. Camera avoidance uses render geometry.
+- Named humanoid relative-pose fallback, not universal arbitrary-skeleton/axis retargeting. Embedded named skating clips are preferred. Inspect each new model; Blender retargeting may be needed for unusual bind axes.
+- Standard gamepad mapping is implemented and tested with a simulated browser gamepad; no physical controller has been verified in this run. Touch gameplay is not implemented.
+- WebGL 2 rendering is the tested path; no WebGPU-only dependency. Babylon bundle is about 1.4 MB gzip before static compression; physics about 1.2 MB uncompressed. Performance depends on device/GPU.
+- Browser imports are local to the current browser profile and origin. Clearing site data deletes them. Keep your original model files.
+
+## License and credit
+
+GPL-3.0-only for this fork's game code, following upstream. Copyright (c) 2026 dumbad and the Skate 3 Rust Engine contributors; SkatePlus additions (c) 2026 Winesett contributors. Preserve [LICENSE](LICENSE). Credit to dumbad's reverse-engineering research and tools, Chasm's renderer/rewrite work, and all upstream contributors. Original generated Yard Skater asset and its generator are CC0-1.0. Babylon.js is Apache-2.0; Rapier is Apache-2.0; other third-party notices retain their licenses. This is an unofficial independent prototype, not affiliated with Electronic Arts.

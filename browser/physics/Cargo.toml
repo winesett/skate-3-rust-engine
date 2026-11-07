@@ -1,0 +1,19 @@
+[package]
+name = "skateplus-web-physics"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+skate-core = { path = "../../crates/skate-core" }
+skate-dynamics = { path = "../../crates/skate-dynamics" }
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true

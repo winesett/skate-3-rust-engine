@@ -113,3 +113,13 @@ __pycache__/
 mods/world-audio-test/logs/
 # Built by tools/steam-launcher/build.bat
 /tools/steam-launcher/SkateLauncher.exe
+
+# SkatePlus browser build outputs and local dependencies
+/browser/node_modules/
+/browser/dist/
+/browser/physics/target/
+/browser/public/characters/
+/browser/public/licenses/
+/browser/public/SOURCE.txt
+# Original CC0 browser placeholder, intentionally distributable.
+!/assets/characters/custom/yard-skater.glb

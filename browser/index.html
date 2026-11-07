@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SkatePlus — Open Session</title>
+  </head>
+  <body>
+    <canvas
+      id="game"
+      aria-label="SkatePlus playable skatepark"
+      tabindex="0"
+    ></canvas>
+    <header>
+      <div class="brand">
+        skate<span>+</span><small>OPEN SESSION / 001</small>
+      </div>
+      <nav>
+        <button id="characters">Character <kbd>C</kbd></button
+        ><button id="reset">Reset <kbd>R</kbd></button
+        ><button id="fullscreen" aria-label="Toggle fullscreen">⛶</button>
+      </nav>
+    </header>
+    <div id="loading">Building your session…</div>
+    <section id="feedback" aria-live="polite">
+      <span id="status">FREE SKATE</span>
+      <h1 id="trick">Find your line.</h1>
+      <p id="hint">Push forward. Make it yours.</p>
+    </section>
+    <aside class="score">
+      <span>SESSION SCORE</span><strong id="score">00000</strong
+      ><small id="speed">0.0 KM/H</small>
+    </aside>
+    <footer>
+      <div><b>THE YARD</b><span>Original park · Rust / WASM physics</span></div>
+      <div class="controls">
+        <kbd>W</kbd> push <kbd>A D</kbd> steer <kbd>S</kbd> brake
+        <kbd>Space</kbd> ollie<br /><kbd>J</kbd> kickflip <kbd>K</kbd> heelflip
+        <kbd>L</kbd> shove-it <kbd>← →</kbd> orbit <kbd>F2</kbd> debug
+      </div>
+    </footer>
+    <pre id="debug" hidden></pre>
+    <dialog id="character-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">YOUR SESSION, YOUR SKATER</span>
+          <h2>Character workshop</h2>
+        </div>
+        <button id="close-character" aria-label="Close character workshop">
+          ✕
+        </button>
+      </div>
+      <div class="workshop">
+        <canvas id="preview" aria-label="Character model preview"></canvas>
+        <div class="fields">
+          <label>Saved character<select id="character-select"></select></label
+          ><label class="import"
+            >Import GLB / glTF<input
+              id="model-file"
+              type="file"
+              accept=".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp"
+              multiple
+          /></label>
+          <p class="muted">
+            For glTF, select its .bin and texture files together. Files stay in
+            this browser.
+          </p>
+          <label
+            >Height multiplier
+            <input
+              id="model-scale"
+              type="range"
+              min="0.25"
+              max="3"
+              step="0.01"
+              value="1"
+            /><output id="scale-value">1.00×</output></label
+          ><label
+            >Facing adjustment
+            <input
+              id="model-rotation"
+              type="range"
+              min="-180"
+              max="180"
+              step="1"
+              value="0"
+            /><output id="rotation-value">0°</output></label
+          ><label>Animation<select id="animation-select"></select></label>
+          <pre id="rig-info">Loading rig…</pre>
+          <p id="import-status" role="status"></p>
+          <button id="use-character" class="primary">Use this character</button>
+        </div>
+      </div>
+      <p class="muted">
+        Y up · feet at origin · 1 unit = 1 metre. Physics stays independent of
+        your model. See browser/docs/CHARACTERS.md for supported rigs.
+      </p>
+    </dialog>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
