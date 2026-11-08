@@ -300,6 +300,8 @@ async function start() {
     "Heelflip",
     "Pop shove-it",
     "Bail — finish the flip",
+    "50–50 grind landed",
+    "Bail — lost the grind",
   ];
   engine.runRenderLoop(() => {
     const now = performance.now(),
@@ -327,7 +329,7 @@ async function start() {
     skaterRoot.rotationQuaternion = Quaternion.FromEulerAngles(
       Math.atan2(state[14], state[13]),
       state[3],
-      -Math.atan2(state[12], state[13]),
+      -Math.atan2(state[12], state[13]) - (state[20] ? state[21] * 0.15 : 0),
     );
     const phase = Math.min(state[7] / 0.5, 1),
       flip =
@@ -338,8 +340,9 @@ async function start() {
             : 0;
     board.rotation.z = flip;
     board.rotation.y = state[6] === 4 ? Math.PI * 2 * phase : 0;
-    const mode =
-      state[5] === 0
+    const mode = state[20]
+      ? "crouch"
+      : state[5] === 0
         ? "jump"
         : input.keys.has("Space")
           ? "crouch"
@@ -373,15 +376,27 @@ async function start() {
       event = state[10];
       if (state[9] > 0) {
         $("trick").textContent = names[state[9]] ?? "Landed";
-        $("status").textContent = state[9] === 5 ? "TRY AGAIN" : "LANDED";
+        $("status").textContent =
+          state[9] === 5 || state[9] === 7 ? "TRY AGAIN" : "LANDED";
         $("hint").textContent =
-          state[9] === 5
-            ? "Give the board time to finish."
-            : "Keep the line going.";
+          state[9] === 7
+            ? "Keep the balance marker centered. A / D to correct."
+            : state[9] === 5
+              ? "Give the board time to finish."
+              : "Keep the line going.";
         feedbackUntil = time + 3;
       }
     }
-    if (state[6] > 0) {
+    $("grind-panel").hidden = !state[20];
+    $("balance-marker").style.left =
+      `${50 + Math.max(-1, Math.min(1, state[21])) * 46}%`;
+    $("grind-points").textContent = `+${Math.floor(state[22])} PENDING`;
+    if (state[20]) {
+      $("trick").textContent = "50–50 grind";
+      $("status").textContent = "ON THE RAIL";
+      $("hint").textContent =
+        "A / D to balance · Space to pop out · land to bank points";
+    } else if (state[6] > 0) {
       $("trick").textContent = names[state[6]];
       $("status").textContent = "IN THE AIR";
     } else if (time > feedbackUntil) {
@@ -389,7 +404,7 @@ async function start() {
       $("trick").textContent = "Find your line.";
       $("hint").textContent = input.controller
         ? "Controller connected · A push · B brake · X ollie · Y/LB/RB tricks"
-        : "Push forward. Make it yours.";
+        : "Practice rail ahead: push W, ollie with Space, land aligned on the rail.";
     }
     $("score").textContent = String(Math.round(state[8])).padStart(5, "0");
     $("speed").textContent = `${(state[4] * 3.6).toFixed(1)} KM/H`;
@@ -401,7 +416,7 @@ async function start() {
           .map((x) => x.toFixed(2))
           .join(
             ", ",
-          )}\nspeed ${state[4].toFixed(2)} m/s · grounded ${state[5]}\ntrick ${state[6]} · airtime ${state[19].toFixed(2)}\n${input.controller ? "Gamepad connected" : "Keyboard"}\nR reset · T slow motion · P pause · N step\n${slow ? "Quarter speed" : "Normal speed"} · ${paused ? "Paused" : "Running"}`;
+          )}\nspeed ${state[4].toFixed(2)} m/s · grounded ${state[5]}\ntrick ${state[6]} · airtime ${state[19].toFixed(2)} · grind ${state[20]} · balance ${state[21].toFixed(2)}\n${input.controller ? "Gamepad connected" : "Keyboard"}\nR reset · T slow motion · P pause · N step\n${slow ? "Quarter speed" : "Normal speed"} · ${paused ? "Paused" : "Running"}`;
     scene.render();
     if (dialog.open) {
       if (preview && animations.value === "") preview.pose("ride", time);

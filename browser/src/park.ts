@@ -105,10 +105,31 @@ export function buildPark(scene: Scene, physics: Physics) {
     box("Boundary wall", side * 40, 1, 0, 0.5, 2, 80, edge);
     box("Boundary wall", 0, 1, side * 40, 80, 2, 0.5, edge);
   }
-  // Flat-bar collider, intentionally no grind constraint in this milestone.
-  box("Flat bar", 7, 0.65, -3, 0.13, 0.13, 6, edge);
-  for (const z of [-5.5, -0.5])
-    box("Rail support", 7, 0.3, z, 0.1, 0.6, 0.1, edge);
+  // Register the same endpoints/top height with Rust for collision and grind capture.
+  const rail = (
+    name: string,
+    x: number,
+    top: number,
+    start: number,
+    end: number,
+  ) => {
+    box(
+      name,
+      x,
+      top - 0.065,
+      (start + end) / 2,
+      0.15,
+      0.13,
+      end - start,
+      edge,
+      false,
+    );
+    physics.add_rail(x, top, start, x, end);
+    for (const z of [start + 0.35, end - 0.35])
+      box("Rail support", x, (top - 0.13) / 2, z, 0.1, top - 0.13, 0.1, edge);
+  };
+  rail("Practice grind rail", 0, 0.55, -4, 12);
+  rail("Flat bar", 7, 0.715, -6, 0);
   for (const x of [-30, 30]) {
     box("Park stripe", x, 0.012, 0, 0.18, 0.012, 70, white, false);
     for (const z of [-25, -12, 1, 14, 27]) {

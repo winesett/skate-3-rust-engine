@@ -6,6 +6,8 @@ use skate_core::{
 };
 use skate_dynamics::{BodyDesc, BodyType, DynamicsWorld, Shape};
 use std::cell::RefCell;
+mod grind;
+use grind::{Grind, Rail};
 const DT: f32 = 1.0 / 120.0;
 const RADIUS: f32 = 0.24;
 struct Game {
@@ -25,6 +27,10 @@ struct Game {
     normal: [f32; 3],
     camera: [ScalarTracker; 3],
     output: [f32; 24],
+    rails: Vec<Rail>,
+    grind: Option<Grind>,
+    grind_cooldown: f32,
+    pending_score: f32,
 }
 fn tracker(position: f32) -> ScalarTracker {
     ScalarTracker {
@@ -75,6 +81,10 @@ impl Game {
             normal: [0., 1., 0.],
             camera: [tracker(0.), tracker(3.), tracker(-18.)],
             output: [0.; 24],
+            rails: Vec::new(),
+            grind: None,
+            grind_cooldown: 0.,
+            pending_score: 0.,
         }
     }
     fn reset(&mut self) {
@@ -82,6 +92,9 @@ impl Game {
             .set_pose(self.player, [0., 1., -12.], [0., 0., 0., 1.]);
         self.world.set_linvel(self.player, [0.; 3]);
         self.world.set_angvel(self.player, [0.; 3]);
+        self.grind = None;
+        self.grind_cooldown = 0.;
+        self.pending_score = 0.;
         self.yaw = 0.;
         self.turn = 0.;
         self.grounded = false;
@@ -93,7 +106,39 @@ impl Game {
         self.camera = [tracker(0.), tracker(3.), tracker(-18.)];
     }
     fn step(&mut self, push: f32, turn: f32, brake: f32, jump: bool, trick: u32) {
+        self.grind_cooldown = (self.grind_cooldown - DT).max(0.);
         let state = self.world.read(self.player).unwrap();
+        if self.grind.is_none()
+            && self.grind_cooldown == 0.
+            && !self.grounded
+            && self.airborne > 0.08
+            && (self.trick <= 1 || self.trick_time > 0.42)
+        {
+            for (index, rail) in self.rails.iter().enumerate() {
+                if let Some((distance, speed)) =
+                    rail.capture(state.position, state.linvel, self.yaw, RADIUS)
+                {
+                    self.grind = Some(Grind {
+                        rail: index,
+                        distance,
+                        speed,
+                        balance: 0.04,
+                        elapsed: 0.,
+                    });
+                    self.trick = 0;
+                    self.trick_time = 0.;
+                    self.pending_score += 100.;
+                    self.last = 0;
+                    self.event += 1;
+                    break;
+                }
+            }
+        }
+        if self.grind.is_some() {
+            self.step_grind(turn, brake, jump);
+            self.publish();
+            return;
+        }
         let p = state.position;
         let mut v = state.linvel;
         let hit = self
@@ -166,17 +211,30 @@ impl Game {
             }
             self.trick_time += DT;
         }
-        if self.grounded && !was && self.airborne > 0.12 && self.trick > 0 {
+        if self.grounded
+            && !was
+            && self.airborne > 0.12
+            && (self.trick > 0 || self.pending_score > 0.)
+        {
             let complete = self.trick <= 1 || self.trick_time > 0.42;
-            self.last = if complete { self.trick.max(1) } else { 5 };
+            self.last = if !complete {
+                5
+            } else if self.pending_score > 0. {
+                6
+            } else {
+                self.trick.max(1)
+            };
             if complete {
-                self.score += match self.last {
-                    2 => 250.,
-                    3 => 300.,
-                    4 => 180.,
-                    _ => 100.,
-                };
+                self.score += self.pending_score
+                    + match self.trick {
+                        2 => 250.,
+                        3 => 300.,
+                        4 => 180.,
+                        1 => 100.,
+                        _ => 0.,
+                    };
             }
+            self.pending_score = 0.;
             self.event += 1;
             self.trick = 0;
             self.trick_time = 0.;
@@ -189,7 +247,113 @@ impl Game {
         if s.position[1] < -8. || s.position[0].abs() > 70. || s.position[2].abs() > 70. {
             self.reset();
         }
+        self.publish();
+    }
+    fn add_rail(&mut self, a: [f32; 3], b: [f32; 3]) {
+        let Some(rail) = Rail::new(a, b) else {
+            return;
+        };
+        self.world
+            .spawn(BodyDesc {
+                shape: Shape::Box {
+                    half_extents: [0.075, 0.065, rail.length / 2.],
+                },
+                body_type: BodyType::Static,
+                position: [(a[0] + b[0]) / 2., a[1] - 0.065, (a[2] + b[2]) / 2.],
+                heading: rail.tangent[0].atan2(rail.tangent[2]),
+                friction: 0.,
+                ..Default::default()
+            })
+            .unwrap();
+        self.rails.push(rail);
+    }
+    fn step_grind(&mut self, turn: f32, brake: f32, jump: bool) {
+        let mut ride = self.grind.take().unwrap();
+        let rail = self.rails[ride.rail];
+        ride.elapsed += DT;
+        ride.balance +=
+            (ride.balance * 0.9 + (ride.elapsed * 2.).sin() * 0.15 + turn.clamp(-1., 1.) * 1.2)
+                * DT;
+        // Reuse upstream's retained grind-friction force; admission/constraint are this host's.
+        let velocity = [
+            rail.tangent[0] * ride.speed,
+            0.,
+            rail.tangent[2] * ride.speed,
+            0.,
+        ];
+        let force = skate_core::physics::grind_forces::friction(
+            velocity,
+            [0., 1., 0., 0.],
+            [0., 75. * 9.81, 0., 0.],
+            1.,
+            false,
+            1.,
+            0,
+            [0.06; 3],
+        );
+        ride.speed += (force[0] * rail.tangent[0] + force[2] * rail.tangent[2]) / 75. * DT;
+        ride.speed =
+            ride.speed.signum() * (ride.speed.abs() - brake.clamp(0., 1.) * 5. * DT).max(0.);
+        ride.distance += ride.speed * DT;
+        self.pending_score += (80. + ride.speed.abs() * 15.) * DT;
+        self.grounded = false;
+        self.normal = [0., 1., 0.];
+        self.airborne += DT;
+        self.turn = ride.balance;
+        self.yaw =
+            (rail.tangent[0] * ride.speed.signum()).atan2(rail.tangent[2] * ride.speed.signum());
+        let mut p = rail.point(ride.distance);
+        p[1] += RADIUS;
+        let bail = ride.balance.abs() >= 1. || ride.speed.abs() < 0.65;
+        let end = ride.distance < 0. || ride.distance > rail.length;
+        let release = jump || bail || end;
+        let mut v = [
+            rail.tangent[0] * ride.speed,
+            0.,
+            rail.tangent[2] * ride.speed,
+        ];
+        if release {
+            self.grind_cooldown = 0.45;
+            self.jump_lock = if jump { 0.2 } else { 0.12 };
+            v[1] = if jump { 4.5 } else { -0.35 };
+            if jump {
+                let side = if turn.abs() > 0.2 {
+                    turn.signum()
+                } else if ride.balance >= 0. {
+                    1.
+                } else {
+                    -1.
+                };
+                v[0] += rail.tangent[2] * side * 1.6;
+                v[2] -= rail.tangent[0] * side * 1.6;
+            }
+            self.trick = if jump { 1 } else { 0 };
+            self.trick_time = 0.;
+            if bail {
+                self.pending_score = 0.;
+                self.last = 7;
+                self.event += 1;
+                let side = if ride.balance >= 0. { 1. } else { -1. };
+                p[0] += rail.tangent[2] * side * 0.4;
+                p[2] -= rail.tangent[0] * side * 0.4;
+                v[0] += rail.tangent[2] * side * 1.5;
+                v[2] -= rail.tangent[0] * side * 1.5;
+            }
+        }
+        self.world.set_pose(self.player, p, [0., 0., 0., 1.]);
+        self.world.set_linvel(self.player, v);
+        self.world.set_angvel(self.player, [0.; 3]);
+        self.world.step(DT);
+        if !release {
+            // Hold only the rail constraint; normal free-flight/collision resumes on release.
+            self.world.set_pose(self.player, p, [0., 0., 0., 1.]);
+            self.world.set_linvel(self.player, v);
+            self.grind = Some(ride);
+        }
+    }
+    fn publish(&mut self) {
         let s = self.world.read(self.player).unwrap();
+        let speed = (s.linvel[0] * s.linvel[0] + s.linvel[2] * s.linvel[2]).sqrt();
         let desired = [
             s.position[0] - self.yaw.sin() * 6.,
             s.position[1] + 3.,
@@ -210,7 +374,7 @@ impl Game {
         }
         self.output = [
             s.position[0],
-            s.position[1] - RADIUS + 0.16,
+            s.position[1] - RADIUS + if self.grind.is_some() { 0.075 } else { 0.16 },
             s.position[2],
             self.yaw,
             speed,
@@ -229,10 +393,10 @@ impl Game {
             self.camera[2].position,
             s.linvel[1],
             self.airborne,
-            0.,
-            0.,
-            0.,
-            0.,
+            if self.grind.is_some() { 1. } else { 0. },
+            self.grind.map_or(0., |g| g.balance),
+            self.pending_score,
+            self.grind.map_or(0., |g| g.elapsed),
         ];
     }
 }
@@ -289,6 +453,10 @@ pub extern "C" fn add_ramp(x: f32, z: f32, width: f32, length: f32, height: f32,
     });
 }
 #[unsafe(no_mangle)]
+pub extern "C" fn add_rail(ax: f32, y: f32, az: f32, bx: f32, bz: f32) {
+    GAME.with(|g| g.borrow_mut().add_rail([ax, y, az], [bx, y, bz]));
+}
+#[unsafe(no_mangle)]
 pub extern "C" fn tick(push: f32, turn: f32, brake: f32, jump: u32, trick: u32) {
     GAME.with(|g| g.borrow_mut().step(push, turn, brake, jump != 0, trick));
 }
@@ -317,6 +485,43 @@ mod tests {
             g.step(0., 0., 0., false, 0);
         }
         g
+    }
+    #[test]
+    fn reverse_and_crosswise_rail_admission() {
+        let mut g = game();
+        g.add_rail([-5., 0.55, 0.], [5., 0.55, 0.]);
+        g.world.set_pose(g.player, [0., 0.87, 0.], [0., 0., 0., 1.]);
+        g.world.set_linvel(g.player, [-6., -2., 0.]);
+        g.yaw = -std::f32::consts::FRAC_PI_2;
+        g.grounded = false;
+        g.airborne = 0.5;
+        g.step(0., 0., 0., false, 0);
+        assert!(g.grind.is_some());
+        assert!(g.output[0] < 0.);
+        assert!(g.output[20] > 0.);
+        g.reset();
+        g.world.set_pose(g.player, [0., 0.87, 0.], [0., 0., 0., 1.]);
+        g.world.set_linvel(g.player, [0., -2., 6.]);
+        g.grounded = false;
+        g.airborne = 0.5;
+        g.step(0., 0., 0., false, 0);
+        assert!(
+            g.grind.is_none(),
+            "crossing a rail sideways must not snap into 50-50"
+        );
+    }
+    #[test]
+    fn unfinished_flip_cannot_attach() {
+        let mut g = game();
+        g.add_rail([0., 0.55, -4.], [0., 0.55, 12.]);
+        g.world.set_pose(g.player, [0., 0.87, 0.], [0., 0., 0., 1.]);
+        g.world.set_linvel(g.player, [0., -2., 6.]);
+        g.grounded = false;
+        g.airborne = 0.5;
+        g.trick = 2;
+        g.trick_time = 0.1;
+        g.step(0., 0., 0., false, 0);
+        assert!(g.grind.is_none());
     }
     #[test]
     fn settle_push_jump_land_score() {

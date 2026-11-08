@@ -27,6 +27,11 @@
       <h1 id="trick">Find your line.</h1>
       <p id="hint">Push forward. Make it yours.</p>
     </section>
+    <aside id="grind-panel" hidden aria-label="Grind balance">
+      <span>50–50 · A / D BALANCE · SPACE TO POP OUT</span>
+      <div class="balance-track"><i id="balance-marker"></i></div>
+      <strong id="grind-points">+0 PENDING</strong>
+    </aside>
     <aside class="score">
       <span>SESSION SCORE</span><strong id="score">00000</strong
       ><small id="speed">0.0 KM/H</small>
@@ -36,7 +41,8 @@
       <div class="controls">
         <kbd>W</kbd> push <kbd>A D</kbd> steer <kbd>S</kbd> brake
         <kbd>Space</kbd> ollie<br /><kbd>J</kbd> kickflip <kbd>K</kbd> heelflip
-        <kbd>L</kbd> shove-it <kbd>← →</kbd> orbit <kbd>F2</kbd> debug
+        <kbd>L</kbd> shove-it <kbd>← →</kbd> orbit <kbd>F2</kbd> debug · ollie
+        onto rails to grind
       </div>
     </footer>
     <pre id="debug" hidden></pre>

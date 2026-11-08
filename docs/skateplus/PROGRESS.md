@@ -13,7 +13,7 @@
 
 ## Scope retained for next milestone
 
-This is an independently playable prototype, not full upstream Bevy/WebGPU or Skate 3 behavior parity. New arcade host drives the existing Rapier world; full recovered articulated board, authored animation graph, grinds/manuals/ragdolls and retail systems are not integrated. Retargeting is limited to semantic humanoid relative poses or model-provided clips; arbitrary bone-axis conversion and foot IK remain future work. Physical gamepad and mobile touch testing remain outstanding.
+This is an independently playable prototype, not full upstream Bevy/WebGPU or Skate 3 behavior parity. New arcade host drives the existing Rapier world; full recovered articulated board, authored animation graph, manuals/ragdolls and retail systems are not integrated; 50–50 rail grinding was added in the follow-up below. Retargeting is limited to semantic humanoid relative poses or model-provided clips; arbitrary bone-axis conversion and foot IK remain future work. Physical gamepad and mobile touch testing remain outstanding.
 
 ## Reproduce
 
@@ -35,3 +35,14 @@ See README.md and browser/docs/CHARACTERS.md for setup, controls, model import a
 - Enabled mipmapping on the sign and PCF shadow filtering with explicit depth/normal bias.
 - Corrected inverted high-DPI render scaling: on a DPR 2 display the QA canvas now renders 1440 pixels for 960 CSS pixels, rather than undersampling.
 - Verified surfaces in desktop Chrome while pushing and orbiting; final browser state reports about 60 FPS. Six Node tests pass (including forward/reverse ramp winding/normal regressions), and the TypeScript/production build passes.
+
+
+## Rail grinding — 2026-11-08
+
+- Added horizontal rail registration shared by park geometry and Rust collision/capture. Added a 16 m practice rail ahead of spawn and made the existing flat bar grindable.
+- Added arcade 50–50 admission for descending, aligned, moving riders; no ground/sideways magnet attachment or unfinished-flip catches. Both travel directions work. Uses upstream `grind_forces::friction` for drag; the rail constraint/admission/balance lifecycle is new browser-host code.
+- Added A/D or left-stick balance, a live balance meter, pending duration/speed points, Space/X/LT pop-out, S/B braking, endpoint release, stall/balance bails, reattachment cooldown and reset cleanup. Pending points bank only after landing and are discarded on a grind bail.
+- Existing rig/custom models remain visual-only; grinding selects crouch pose and balance lean, independent of character assets.
+- Passed 11 Node checks including real-WASM attachment/travel/landing banking, pop-out/gravity/cooldown, balance bail, ground/off-rail rejection, and reset. Four native Rust tests pass, including reverse cross-axis rail travel, sideways rejection and incomplete-flip rejection. TypeScript/production build passes.
+- Verified browser keyboard approach: push for ~1 s, ollie, catch practice rail. HUD showed 50–50, balance meter and +103 pending; avatar and board visibly ride the rail. Verified Space pop-out clears the rail sideways (A/D selects side) and a clean landing banked 211 points with “50–50 grind landed” feedback at roughly 60 FPS. Physical controller hardware remains unverified; mappings use the same existing input actions.
+- Initial grinding supports 50–50 on the two marked rails; no arbitrary surface grinding, boardslides or other grind styles yet.

@@ -25,6 +25,8 @@ Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live
 | Kickflip in air | J | Y / top face |
 | Heelflip in air | K | LB |
 | Pop shove-it in air | L | RB |
+| Balance during 50–50 grind | A / D | Left stick |
+| Pop out of a grind | Space | X / left face or LT |
 | Camera orbit | Left / Right arrows | Right stick X |
 | Reset position | R / Reset button | Back / View |
 | Character workshop | C / Character button | Use mouse |
@@ -32,7 +34,9 @@ Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live
 | Physics diagnostics | F2 | — |
 | Debug slow motion / pause / single step | T / P / N while F2 is open | — |
 
-Ollie first, then choose a trick while airborne. Give flips roughly half a second to complete. Completed tricks score on landing; late flips bail without points. Reset preserves the session score. The workshop pauses physics. Alt-tab clears held keys. Click the game after interacting with another application.
+Ollie first, then choose a trick while airborne. Give flips roughly half a second to complete. Completed tricks score on landing; late flips bail without points. Reset preserves the session score. The workshop pauses physics.
+
+**Grinding:** a long practice rail is directly ahead of spawn. Hold W for about a second, then tap Space and coast. Descending onto the rail with the board aligned automatically catches a 50–50. Use A/D (left stick) to keep the balance marker centered, Space (X/LT) to pop out, or ride off the end. Hold A/D as you pop to choose the exit side. S/B brakes on the rail. Points build while sliding and bank when you land; losing balance or stalling drops the pending grind points. Rails catch in either direction. Sideways approaches, unfinished flips, and simply rolling into a rail do not attach. Alt-tab clears held keys. Click the game after interacting with another application.
 
 ## Custom characters
 
@@ -83,8 +87,8 @@ For GPL distribution, publish the corresponding complete source of the exact bin
 
 ## Known limits / next work
 
-- Arcade single-sphere rider collision; the visible board and humanoid are decoupled from the collider. No original articulated-board or ragdoll simulation, grinds/manuals, replay, multiplayer, sound, or retail animation graph parity.
-- Convex banks, tabletop, ledges and flat bar; the flat bar collides but has no grind attachment system. Some obstacle edges stop the rider; ollie over them. Camera avoidance uses render geometry.
+- Arcade single-sphere rider collision; the visible board and humanoid are decoupled from the collider. No original articulated-board or ragdoll simulation, manuals, replay, multiplayer, sound, or retail animation graph parity.
+- Convex banks, tabletop, ledges and two grindable rails. Arcade 50–50 constraints reuse upstream grind friction; boardslides, nose/tail grinds, ledge grinds and the full recovered grind manager are not implemented. Some obstacle edges stop the rider; ollie over them. Camera avoidance uses render geometry.
 - Named humanoid relative-pose fallback, not universal arbitrary-skeleton/axis retargeting. Embedded named skating clips are preferred. Inspect each new model; Blender retargeting may be needed for unusual bind axes.
 - Standard gamepad mapping is implemented and tested with a simulated browser gamepad; no physical controller has been verified in this run. Touch gameplay is not implemented.
 - WebGL 2 rendering is the tested path; no WebGPU-only dependency. Babylon bundle is about 1.4 MB gzip before static compression; physics about 1.2 MB uncompressed. Performance depends on device/GPU.

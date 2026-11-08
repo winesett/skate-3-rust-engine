@@ -12,6 +12,7 @@ export type Physics = {
   state_ptr(): number;
   add_box(...args: number[]): void;
   add_ramp(...args: number[]): void;
+  add_rail(ax: number, y: number, az: number, bx: number, bz: number): void;
 };
 export async function loadPhysics(): Promise<Physics> {
   const response = await fetch(
