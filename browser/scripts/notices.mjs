@@ -20,3 +20,8 @@ await cp(
   new URL("assets/characters/custom/LICENSE.txt", root),
   new URL("Yard-Skater-CC0.txt", out),
 );
+
+await cp(
+  new URL("assets/environments/custom/LICENSE.txt", root),
+  new URL("Import-Sandbox-CC0.txt", out),
+);

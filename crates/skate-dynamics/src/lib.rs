@@ -408,6 +408,18 @@ impl DynamicsWorld {
         &mut self,
         triangles: impl Iterator<Item = [[f32; 3]; 3]>,
     ) -> Result<(), String> {
+        self.set_ground_with_friction(triangles, 1.)
+    }
+
+    /// Host-selected surface friction; legacy callers retain the original 1.0 default.
+    pub fn set_ground_with_friction(
+        &mut self,
+        triangles: impl Iterator<Item = [[f32; 3]; 3]>,
+        friction: f32,
+    ) -> Result<(), String> {
+        if !friction.is_finite() || friction < 0. {
+            return Err("ground friction must be finite and nonnegative".into());
+        }
         let mut vertices = Vec::new();
         let mut indices = Vec::new();
         for triangle in triangles {
@@ -425,7 +437,7 @@ impl DynamicsWorld {
             TriMeshFlags::FIX_INTERNAL_EDGES,
         )
         .map_err(|e| e.to_string())?
-        .friction(1.)
+        .friction(friction)
         .collision_groups(InteractionGroups::new(
             Group::ALL,
             Group::ALL,

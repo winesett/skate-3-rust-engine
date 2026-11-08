@@ -31,3 +31,7 @@ The host is original, small arcade gameplay integration. It does not run the ful
 Authenticated GitHub user: winesett. Created https://github.com/winesett/skate-3-rust-engine. Local `upstream` points to SK8-ENGINE; `origin` to winesett. Work branch: `skateplus/browser-prototype`.
 
 GPL-3.0-only applies to upstream original code and this game fork. Original notices, full upstream README and vendor licenses remain in the checkout. New generated character is CC0; Babylon.js and Rapier retain Apache-2.0. A future public binary release must provide corresponding complete source and all applicable notices. Creating the fork is not a public game deployment.
+
+## Follow-up: interchangeable assets and Xbox input
+
+The browser host now imports static glTF environment collision, configured spawn/bounds and rail metadata. A `set_ground_with_friction` overload was added to dynamics so imported parks can match the zero-friction browser skating surface; `set_ground` preserves the original 1.0 default for existing callers. Character descriptors add exact animation/bone maps and visual offset. Xbox uses the standard Gamepad API mapping with rescaled deadzones, analog push and menu navigation. See browser/docs/ASSET_PIPELINE.md for handoff requirements and verification limits.

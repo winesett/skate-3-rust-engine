@@ -9,7 +9,10 @@
     "test": "node --test tests/*.test.mjs",
     "characters": "node scripts/characters.mjs",
     "preview": "vite preview --host 0.0.0.0",
-    "prebuild": "node scripts/characters.mjs && node scripts/notices.mjs"
+    "prebuild": "npm run assets && node scripts/notices.mjs",
+    "environments": "node scripts/environments.mjs",
+    "assets": "npm run characters && npm run environments",
+    "predev": "npm run assets"
   },
   "dependencies": {
     "@babylonjs/core": "^8.0.0",

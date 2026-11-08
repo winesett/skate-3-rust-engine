@@ -1,0 +1,5 @@
+import-sandbox.gltf is original procedural content created for SkatePlus, 2026.
+To the extent possible under law, the authors waive all copyright and related
+or neighboring rights under CC0 1.0 Universal:
+https://creativecommons.org/publicdomain/zero/1.0/
+This dedication does not apply to imported third-party environments or engine code.

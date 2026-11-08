@@ -16,6 +16,9 @@ export type Entry = {
   scale: number;
   rotation: number;
   files?: { name: string; data: ArrayBuffer }[];
+  offset?: [number, number, number];
+  boneMap?: Record<string, string>;
+  animations?: Record<string, string>;
 };
 const base = import.meta.env.BASE_URL;
 const normalize = (s: string) =>
@@ -47,7 +50,9 @@ export class Character {
   active?: AnimationGroup;
   lastMode = "";
   diagnostics: string;
+  animationMap: Record<string, string>;
   constructor(container: AssetContainer, scene: Scene, entry: Entry) {
+    this.animationMap = entry.animations ?? {};
     this.container = container;
     container.addAllToScene();
     this.root = new TransformNode("Character visual wrapper", scene);
@@ -55,7 +60,9 @@ export class Character {
     this.meshes = container.meshes;
     for (const [key, names] of Object.entries(aliases)) {
       const node = container.transformNodes.find((n) =>
-        names.includes(normalize(n.name)),
+        entry.boneMap?.[key]
+          ? n.name === entry.boneMap[key]
+          : names.includes(normalize(n.name)),
       );
       if (node) {
         this.bones[key] = node;
@@ -82,6 +89,13 @@ export class Character {
     container.animationGroups.forEach((a) => a.stop());
   }
   adjust(entry: Entry) {
+    if (
+      !Number.isFinite(entry.scale) ||
+      entry.scale <= 0 ||
+      !Number.isFinite(entry.rotation)
+    )
+      throw new Error("Invalid character scale or facing.");
+    this.root.position.copyFromFloats(...(entry.offset ?? [0, 0, 0]));
     this.root.scaling.setAll(entry.scale);
     this.root.rotation.y = (entry.rotation * Math.PI) / 180;
   }
@@ -99,9 +113,13 @@ export class Character {
               : mode === "ride"
                 ? ["ride", "skate", "idle"]
                 : ["idle", "stand"];
-      this.active = this.container.animationGroups.find((g) =>
-        names.some((n) => g.name.toLowerCase().includes(n)),
-      );
+      this.active =
+        this.container.animationGroups.find(
+          (g) => g.name === this.animationMap[mode],
+        ) ??
+        this.container.animationGroups.find((g) =>
+          names.some((n) => g.name.toLowerCase().includes(n)),
+        );
       this.active?.start(true, 1);
       this.lastMode = mode;
     }
@@ -135,13 +153,14 @@ export class Character {
     this.root.dispose();
   }
 }
-async function source(
+export async function assetSource(
   entry: Entry,
+  directory = "characters",
 ): Promise<{ file: string | File; root: string; extension: ".glb" | ".gltf" }> {
   if (!entry.files) {
     const f = entry.file!;
     return {
-      root: `${base}characters/`,
+      root: `${base}${directory}/`,
       file: f,
       extension: f.toLowerCase().endsWith(".glb") ? ".glb" : ".gltf",
     };
@@ -185,7 +204,23 @@ async function source(
   };
 }
 export async function loadCharacter(scene: Scene, entry: Entry) {
-  const s = await source(entry);
+  if (
+    !Number.isFinite(entry.scale) ||
+    entry.scale <= 0 ||
+    !Number.isFinite(entry.rotation)
+  )
+    throw new Error(
+      "Character scale/facing must be finite; scale must be positive.",
+    );
+  if (
+    entry.offset &&
+    (!Array.isArray(entry.offset) ||
+      entry.offset.length !== 3 ||
+      !entry.offset.every(Number.isFinite))
+  )
+    throw new Error("Character offset must be three finite numbers.");
+
+  const s = await assetSource(entry);
   const container = await LoadAssetContainerAsync(s.file, scene, {
     rootUrl: s.root,
     pluginExtension: s.extension,

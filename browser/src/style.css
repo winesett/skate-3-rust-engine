@@ -367,3 +367,58 @@ input:focus-visible {
   transform: translateX(-50%);
   z-index: 1;
 }
+
+#controller-status {
+  position: absolute;
+  top: 108px;
+  right: 34px;
+  font-size: 10px;
+  color: #28473c;
+  background: #eef4e2dd;
+  border-radius: 4px;
+  padding: 6px 9px;
+  pointer-events: none;
+}
+#environment-panel {
+  max-width: 720px;
+}
+#environment-diagnostics {
+  white-space: pre-wrap;
+  font-size: 12px;
+  background: #10231d;
+  padding: 14px;
+  line-height: 1.6;
+}
+.env-transform {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+.env-transform label {
+  display: block;
+}
+.env-transform input {
+  display: block;
+  width: 100%;
+  margin-top: 7px;
+  background: #10231d;
+  color: white;
+  border: 1px solid #567361;
+  border-radius: 4px;
+  padding: 9px;
+}
+@media (max-width: 700px) {
+  #controller-status {
+    top: 82px;
+    right: 18px;
+    max-width: 65vw;
+  }
+  nav {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 65vw;
+  }
+  .env-transform {
+    gap: 8px;
+  }
+}

@@ -1,0 +1,1 @@
+{"id":"my-skater","name":"My skater","file":"my-skater.glb","scale":1,"rotation":0,"offset":[0,0,0],"animations":{"idle":"Idle","ride":"Ride","push":"Push","crouch":"Crouch","jump":"Jump"},"boneMap":{"hips":"Hips","spine":"Spine","leftUpLeg":"LeftUpLeg","rightUpLeg":"RightUpLeg","leftLeg":"LeftLeg","rightLeg":"RightLeg"}}

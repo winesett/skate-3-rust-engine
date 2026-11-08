@@ -16,11 +16,15 @@
         skate<span>+</span><small>OPEN SESSION / 001</small>
       </div>
       <nav>
-        <button id="characters">Character <kbd>C</kbd></button
+        <button id="environments">Environment <kbd>E</kbd></button
+        ><button id="characters">Character <kbd>C</kbd></button
         ><button id="reset">Reset <kbd>R</kbd></button
         ><button id="fullscreen" aria-label="Toggle fullscreen">⛶</button>
       </nav>
     </header>
+    <div id="controller-status" role="status">
+      Keyboard · connect Xbox and press A
+    </div>
     <div id="loading">Building your session…</div>
     <section id="feedback" aria-live="polite">
       <span id="status">FREE SKATE</span>
@@ -28,7 +32,9 @@
       <p id="hint">Push forward. Make it yours.</p>
     </section>
     <aside id="grind-panel" hidden aria-label="Grind balance">
-      <span>50–50 · A / D BALANCE · SPACE TO POP OUT</span>
+      <span id="grind-instructions"
+        >50–50 · A / D BALANCE · SPACE TO POP OUT</span
+      >
       <div class="balance-track"><i id="balance-marker"></i></div>
       <strong id="grind-points">+0 PENDING</strong>
     </aside>
@@ -37,8 +43,11 @@
       ><small id="speed">0.0 KM/H</small>
     </aside>
     <footer>
-      <div><b>THE YARD</b><span>Original park · Rust / WASM physics</span></div>
-      <div class="controls">
+      <div>
+        <b id="environment-name">THE YARD</b
+        ><span>SkatePlus · Rust / WASM physics</span>
+      </div>
+      <div class="controls" id="control-legend">
         <kbd>W</kbd> push <kbd>A D</kbd> steer <kbd>S</kbd> brake
         <kbd>Space</kbd> ollie<br /><kbd>J</kbd> kickflip <kbd>K</kbd> heelflip
         <kbd>L</kbd> shove-it <kbd>← →</kbd> orbit <kbd>F2</kbd> debug · ollie
@@ -64,12 +73,13 @@
             >Import GLB / glTF<input
               id="model-file"
               type="file"
-              accept=".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp"
+              accept=".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp,.json"
               multiple
           /></label>
           <p class="muted">
             For glTF, select its .bin and texture files together. Files stay in
-            this browser.
+            this browser. You can include character JSON for bone names and
+            animation mappings.
           </p>
           <label
             >Height multiplier
@@ -94,13 +104,90 @@
           ><label>Animation<select id="animation-select"></select></label>
           <pre id="rig-info">Loading rig…</pre>
           <p id="import-status" role="status"></p>
-          <button id="use-character" class="primary">Use this character</button>
+          <button id="use-character" class="primary">Use this character</button
+          ><button id="character-environment">Environment garage</button>
         </div>
       </div>
       <p class="muted">
         Y up · feet at origin · 1 unit = 1 metre. Physics stays independent of
         your model. See browser/docs/CHARACTERS.md for supported rigs.
       </p>
+    </dialog>
+    <dialog id="environment-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">BUILD YOUR SESSION</span>
+          <h2>Environment garage</h2>
+        </div>
+        <button id="close-environment" aria-label="Close environment garage">
+          ✕
+        </button>
+      </div>
+      <div class="fields">
+        <label
+          >Saved environment<select id="environment-select"></select
+        ></label>
+        <label class="import"
+          >Import environment GLB / glTF<input
+            id="environment-file"
+            type="file"
+            accept=".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp,.json"
+            multiple
+        /></label>
+        <p class="muted">
+          Select the model, dependencies, and optional environment JSON
+          together. Local files stay in your browser. Applying a park rebuilds
+          collision and starts a new score; your character stays selected.
+        </p>
+        <div class="env-transform">
+          <label
+            >Scale<input
+              id="environment-scale"
+              type="number"
+              min="0.001"
+              max="1000"
+              step="0.01"
+              value="1" /></label
+          ><label
+            >Rotation °<input
+              id="environment-rotation"
+              type="number"
+              value="0" /></label
+          ><label
+            >Spawn heading °<input
+              id="environment-heading"
+              type="number"
+              value="0"
+          /></label>
+        </div>
+        <div class="env-transform">
+          <label
+            >Spawn X<input
+              id="environment-x"
+              type="number"
+              placeholder="Auto" /></label
+          ><label
+            >Spawn Y<input
+              id="environment-y"
+              type="number"
+              placeholder="Auto" /></label
+          ><label
+            >Spawn Z<input id="environment-z" type="number" placeholder="Auto"
+          /></label>
+        </div>
+        <p class="muted">
+          Leave all spawn fields blank to use a SPAWN marker or drop above the
+          park center. Y is the rider collider center, in model units.
+        </p>
+        <pre id="environment-diagnostics">Original procedural park</pre>
+        <p id="environment-status" role="status"></p>
+        <button id="use-environment" class="primary">Load environment</button
+        ><button id="environment-character">Character workshop</button>
+        <p class="muted">
+          Xbox: D-pad up/down chooses a field, left/right changes it, A
+          activates, B returns. Menu opens/closes the garage.
+        </p>
+      </div>
     </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>

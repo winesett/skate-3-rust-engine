@@ -20,3 +20,24 @@ test("original GLB validates and ships a real skin and five skeletal clips", asy
   assert.equal(json.animations.length, 5);
   assert.ok(json.meshes[0].primitives[0].attributes.WEIGHTS_0 !== undefined);
 });
+
+test("original sandbox glTF validates as a static importable environment", async () => {
+  const source = await readFile(
+    new URL(
+      "../../assets/environments/custom/import-sandbox.gltf",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  const result = await validator.validateString(source, {
+    uri: "import-sandbox.gltf",
+  });
+  assert.equal(
+    result.issues.numErrors,
+    0,
+    JSON.stringify(result.issues.messages),
+  );
+  const json = JSON.parse(source);
+  assert.equal(json.meshes.length, 1);
+  assert.equal(json.skins, undefined);
+});

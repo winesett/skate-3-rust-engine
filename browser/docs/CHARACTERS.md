@@ -48,3 +48,7 @@ Copy models and their dependencies into `assets/characters/custom/`. Run `npm ru
 ```
 
 Run the command again after changing files. This is an explicit build-time scan, not unrestricted browser access to your filesystem. Catalog files are included in static builds; browser imports are private local profile data. Only add models you have rights to distribute.
+
+## Explicit mappings and visual offset
+
+`assets/characters/custom/character.example.json` provides exact `animations` and `boneMap` overrides plus `offset: [x,y,z]`. Add the entry to the character manifest, or select the JSON together with your model in the workshop. See [ASSET_PIPELINE.md](ASSET_PIPELINE.md) for the complete handoff workflow.

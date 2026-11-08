@@ -17,8 +17,14 @@ import {
   TransformNode,
 } from "@babylonjs/core";
 import { loadPhysics } from "./physics";
-import { buildPark, createBoard } from "./park";
+import { createBoard } from "./park";
 import { Input } from "./input";
+import {
+  buildEnvironment,
+  environmentCatalog,
+  saveEnvironment,
+  type EnvironmentEntry,
+} from "./environments";
 import {
   catalog,
   loadCharacter,
@@ -31,7 +37,7 @@ const $ = <T extends HTMLElement>(id: string) =>
 const canvas = $<HTMLCanvasElement>("game");
 const dialog = $<HTMLDialogElement>("character-panel");
 async function start() {
-  const physics = await loadPhysics();
+  let physics = await loadPhysics();
   const engine = new Engine(canvas, true, {
     stencil: true,
     preserveDrawingBuffer: false,
@@ -65,7 +71,23 @@ async function start() {
   camera.maxZ = 300;
   camera.fov = 0.85;
   scene.activeCamera = camera;
-  const park = buildPark(scene, physics);
+  const environmentDialog = $<HTMLDialogElement>("environment-panel");
+  let environmentEntries = await environmentCatalog();
+  let environmentEntry =
+    environmentEntries.find(
+      (e) => e.id === localStorage.getItem("skateplus-environment"),
+    ) ?? environmentEntries[0];
+  let park: Awaited<ReturnType<typeof buildEnvironment>>;
+  try {
+    park = await buildEnvironment(scene, physics, environmentEntry);
+  } catch (e) {
+    console.warn("Environment failed; falling back to Yard", e);
+    physics = await loadPhysics();
+    environmentEntry = environmentEntries.find((e) => e.builtin === "yard")!;
+    park = await buildEnvironment(scene, physics, environmentEntry);
+  }
+  $("environment-name").textContent = environmentEntry.name;
+  let switchingEnvironment = false;
   const skaterRoot = new TransformNode("Skater physics transform", scene);
   const board = createBoard(scene);
   board.parent = skaterRoot;
@@ -172,11 +194,13 @@ async function start() {
     }
   }
   function workshop() {
+    if (environmentDialog.open) environmentDialog.close();
     input.clear();
     dialog.showModal();
     refresh();
     pe.resize();
     void showPreview(entry);
+    select.focus();
   }
   $("characters").onclick = workshop;
   $("close-character").onclick = () => {
@@ -211,16 +235,21 @@ async function start() {
       return;
     }
     try {
+      const sidecar = files.find((f) => /\.json$/i.test(f.name));
+      const settings = sidecar ? JSON.parse(await sidecar.text()) : {};
       const candidate: Entry = {
+        ...settings,
         id: crypto.randomUUID(),
-        name: model.name,
-        scale: 1,
-        rotation: 0,
+        name: typeof settings.name === "string" ? settings.name : model.name,
+        scale: settings.scale ?? 1,
+        rotation: settings.rotation ?? 0,
         files: await Promise.all(
-          files.map(async (f) => ({
-            name: f.name,
-            data: await f.arrayBuffer(),
-          })),
+          files
+            .filter((f) => !/\.json$/i.test(f.name))
+            .map(async (f) => ({
+              name: f.name,
+              data: await f.arrayBuffer(),
+            })),
         ),
       };
       await showPreview(candidate);
@@ -255,6 +284,204 @@ async function start() {
     }
   };
   const input = new Input();
+  let pendingEnvironment: EnvironmentEntry = { ...environmentEntry };
+  const environmentSelect = $<HTMLSelectElement>("environment-select");
+  function environmentFields(e: EnvironmentEntry) {
+    pendingEnvironment = { ...e };
+    for (const id of ["scale", "rotation", "heading", "x", "y", "z"])
+      $<HTMLInputElement>(`environment-${id}`).disabled = !!e.builtin;
+    for (const [id, value] of [
+      ["scale", e.scale],
+      ["rotation", e.rotation],
+      ["heading", e.heading ?? 0],
+      ["x", e.spawn?.[0] ?? ""],
+      ["y", e.spawn?.[1] ?? ""],
+      ["z", e.spawn?.[2] ?? ""],
+    ] as const)
+      $<HTMLInputElement>(`environment-${id}`).value = String(value);
+    $("environment-diagnostics").textContent = e.builtin
+      ? "The Yard · original procedural park"
+      : `${e.name} · ${(e.rails ?? []).length} configured rails. Geometry is validated before replacing the current park.`;
+  }
+  function garage() {
+    if (dialog.open) dialog.close();
+    input.clear();
+    environmentSelect.replaceChildren(
+      ...environmentEntries.map((e) => {
+        const o = document.createElement("option");
+        o.value = e.id;
+        o.textContent = e.name;
+        return o;
+      }),
+    );
+    environmentSelect.value = environmentEntry.id;
+    environmentFields(environmentEntry);
+    $("environment-status").textContent = park.diagnostics;
+    environmentDialog.showModal();
+    environmentSelect.focus();
+  }
+  $("environments").onclick = garage;
+  $("character-environment").onclick = garage;
+  $("environment-character").onclick = () => {
+    environmentDialog.close();
+    workshop();
+  };
+  $("close-environment").onclick = () => environmentDialog.close();
+  environmentDialog.addEventListener("close", () => {
+    input.clear();
+    canvas.focus();
+  });
+  environmentSelect.onchange = () => {
+    const e = environmentEntries.find((e) => e.id === environmentSelect.value);
+    if (e) environmentFields(e);
+  };
+  $<HTMLInputElement>("environment-file").onchange = async (e) => {
+    try {
+      const files = [...((e.target as HTMLInputElement).files ?? [])],
+        model = files.find((f) => /\.(glb|gltf)$/i.test(f.name));
+      if (!model) return;
+      if (files.reduce((sum, f) => sum + f.size, 0) > 50 * 1024 * 1024)
+        throw new Error("Environment import limit: 50 MB.");
+      const sidecar = files.find((f) => /\.json$/i.test(f.name));
+      const settings = sidecar ? JSON.parse(await sidecar.text()) : {};
+      environmentFields({
+        ...settings,
+        id: crypto.randomUUID(),
+        name: typeof settings.name === "string" ? settings.name : model.name,
+        builtin: undefined,
+        scale: settings.scale ?? 1,
+        rotation: settings.rotation ?? 0,
+        files: await Promise.all(
+          files
+            .filter((f) => !/\.json$/i.test(f.name))
+            .map(async (f) => ({ name: f.name, data: await f.arrayBuffer() })),
+        ),
+      });
+      $("environment-status").textContent =
+        "Ready to validate and load. Current park stays intact if import fails.";
+    } catch (error) {
+      $("environment-status").textContent = String(error);
+    }
+  };
+  $("use-environment").onclick = async () => {
+    if (switchingEnvironment) return;
+    switchingEnvironment = true;
+    input.clear();
+    $("environment-status").textContent = "Building park collision…";
+    let next: Awaited<ReturnType<typeof buildEnvironment>> | undefined;
+    try {
+      const candidate = {
+        ...pendingEnvironment,
+        scale: Number($<HTMLInputElement>("environment-scale").value),
+        rotation: Number($<HTMLInputElement>("environment-rotation").value),
+        heading: Number($<HTMLInputElement>("environment-heading").value),
+      };
+      const xyz = ["x", "y", "z"].map(
+        (axis) => $<HTMLInputElement>(`environment-${axis}`).value,
+      );
+      if (xyz.some((v) => v !== "")) {
+        if (xyz.some((v) => v === ""))
+          throw new Error(
+            "Fill all three spawn coordinates or leave all blank.",
+          );
+        candidate.spawn = xyz.map(Number) as [number, number, number];
+      } else delete candidate.spawn;
+      const nextPhysics = await loadPhysics();
+      next = await buildEnvironment(scene, nextPhysics, candidate);
+      await saveEnvironment(candidate);
+      localStorage.setItem("skateplus-environment", candidate.id);
+      const previous = park;
+      park = next;
+      physics = nextPhysics;
+      previous.dispose();
+      environmentEntry = candidate;
+      const index = environmentEntries.findIndex((e) => e.id === candidate.id);
+      if (index < 0) environmentEntries.push(candidate);
+      else environmentEntries[index] = candidate;
+      $("environment-name").textContent = park.name;
+      orbit = 0;
+      accumulator = 0;
+      event = -1;
+      feedbackUntil = 0;
+      state.fill(0);
+      environmentDialog.close();
+      canvas.focus();
+    } catch (error) {
+      next?.dispose();
+      $("environment-status").textContent = String(error);
+    } finally {
+      switchingEnvironment = false;
+    }
+  };
+  const keyboardLegend = $("control-legend").innerHTML;
+  let lastController = false;
+  function controllerMenus() {
+    const actions = input.menuActions();
+    $("controller-status").textContent = input.controllerLabel;
+    if (lastController !== input.controller) {
+      lastController = input.controller;
+      $("control-legend").innerHTML = input.controller
+        ? "<kbd>A / RT</kbd> push <kbd>LS</kbd> steer / balance <kbd>B</kbd> brake <kbd>X / LT</kbd> ollie<br><kbd>Y</kbd> kickflip <kbd>LB</kbd> heelflip <kbd>RB</kbd> shove-it <kbd>RS</kbd> camera <kbd>View</kbd> reset <kbd>Menu</kbd> garage"
+        : keyboardLegend;
+      $("grind-instructions").textContent = input.controller
+        ? "50–50 · LEFT STICK BALANCE · X / LT TO POP OUT"
+        : "50–50 · A / D BALANCE · SPACE TO POP OUT";
+    }
+    const active = dialog.open
+      ? dialog
+      : environmentDialog.open
+        ? environmentDialog
+        : undefined;
+    if (actions.menu) {
+      if (active) active.close();
+      else garage();
+      return;
+    }
+    if (!active) return;
+    if (actions.back) {
+      active.close();
+      return;
+    }
+    const controls = [
+      ...active.querySelectorAll<HTMLElement>(
+        "button,select,input:not([type=file])",
+      ),
+    ].filter(
+      (el) =>
+        el.getClientRects().length > 0 && !(el as HTMLButtonElement).disabled,
+    );
+    let index = controls.indexOf(document.activeElement as HTMLElement);
+    if (index < 0) index = 0;
+    if (actions.up || actions.down) {
+      index =
+        (index + (actions.down ? 1 : -1) + controls.length) % controls.length;
+      controls[index]?.focus();
+      return;
+    }
+    const focused = controls[index];
+    const delta = actions.right ? 1 : actions.left ? -1 : 0;
+    if (delta && focused instanceof HTMLSelectElement) {
+      focused.selectedIndex =
+        (focused.selectedIndex + delta + focused.options.length) %
+        focused.options.length;
+      focused.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    if (delta && focused instanceof HTMLInputElement) {
+      const step = Number(focused.step) || 1;
+      focused.value = String(
+        Math.min(
+          Number(focused.max) || Infinity,
+          Math.max(
+            Number(focused.min) || -Infinity,
+            (Number(focused.value) || 0) + delta * step,
+          ),
+        ),
+      );
+      focused.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    if (actions.accept && focused instanceof HTMLButtonElement) focused.click();
+  }
+
   $("reset").onclick = () => {
     physics.reset();
     input.clear();
@@ -272,9 +499,10 @@ async function start() {
     paused = false,
     singleStep = false;
   window.addEventListener("keydown", (e) => {
-    if (dialog.open || e.repeat) return;
+    if (dialog.open || environmentDialog.open || e.repeat) return;
     if (e.code === "KeyR") physics.reset();
     if (e.code === "KeyC") workshop();
+    if (e.code === "KeyE") garage();
     if (debug && e.code === "KeyT") slow = !slow;
     if (debug && e.code === "KeyP") paused = !paused;
     if (debug && e.code === "KeyN") singleStep = true;
@@ -308,7 +536,14 @@ async function start() {
       dt = Math.min((now - last) / 1000, 0.05);
     last = now;
     time += dt;
-    if (!dialog.open && !document.hidden && (!paused || singleStep)) {
+    controllerMenus();
+    if (
+      !dialog.open &&
+      !environmentDialog.open &&
+      !switchingEnvironment &&
+      !document.hidden &&
+      (!paused || singleStep)
+    ) {
       accumulator += singleStep ? 1 / 120 : dt * (slow ? 0.25 : 1);
       singleStep = false;
       while (accumulator >= 1 / 120) {
@@ -403,7 +638,7 @@ async function start() {
       $("status").textContent = "FREE SKATE";
       $("trick").textContent = "Find your line.";
       $("hint").textContent = input.controller
-        ? "Controller connected · A push · B brake · X ollie · Y/LB/RB tricks"
+        ? "Xbox: A/RT push · X/LT ollie · Y/LB/RB tricks · Menu garage"
         : "Practice rail ahead: push W, ollie with Space, land aligned on the rail.";
     }
     $("score").textContent = String(Math.round(state[8])).padStart(5, "0");
@@ -447,7 +682,17 @@ async function start() {
         return engine.getFps();
       },
       get paused() {
-        return dialog.open;
+        return dialog.open || environmentDialog.open;
+      },
+      get environment() {
+        return {
+          id: environmentEntry.id,
+          name: park.name,
+          diagnostics: park.diagnostics,
+        };
+      },
+      get controller() {
+        return { connected: input.controller, label: input.controllerLabel };
       },
       get renderer() {
         return `Babylon WebGL ${engine.webGLVersion}`;

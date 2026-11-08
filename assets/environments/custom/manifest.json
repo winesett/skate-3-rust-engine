@@ -1,0 +1,1 @@
+{"environments":[{"id":"yard","name":"The Yard","builtin":"yard","scale":1,"rotation":0},{"id":"sandbox","name":"Import Sandbox — example glTF","file":"import-sandbox.gltf","scale":1,"rotation":0,"spawn":[0,1,-8],"heading":0,"rails":[{"a":[0,0.55,-3],"b":[0,0.55,7]}]}]}

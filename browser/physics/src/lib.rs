@@ -31,6 +31,10 @@ struct Game {
     grind: Option<Grind>,
     grind_cooldown: f32,
     pending_score: f32,
+    spawn: [f32; 3],
+    spawn_yaw: f32,
+    bounds: [f32; 5],
+    mesh_triangles: Vec<[[f32; 3]; 3]>,
 }
 fn tracker(position: f32) -> ScalarTracker {
     ScalarTracker {
@@ -85,17 +89,21 @@ impl Game {
             grind: None,
             grind_cooldown: 0.,
             pending_score: 0.,
+            spawn: [0., 1., -12.],
+            spawn_yaw: 0.,
+            bounds: [-70., 70., -8., -70., 70.],
+            mesh_triangles: Vec::new(),
         }
     }
     fn reset(&mut self) {
         self.world
-            .set_pose(self.player, [0., 1., -12.], [0., 0., 0., 1.]);
+            .set_pose(self.player, self.spawn, [0., 0., 0., 1.]);
         self.world.set_linvel(self.player, [0.; 3]);
         self.world.set_angvel(self.player, [0.; 3]);
         self.grind = None;
         self.grind_cooldown = 0.;
         self.pending_score = 0.;
-        self.yaw = 0.;
+        self.yaw = self.spawn_yaw;
         self.turn = 0.;
         self.grounded = false;
         self.trick = 0;
@@ -103,7 +111,11 @@ impl Game {
         self.jump_lock = 0.2;
         self.last = 0;
         self.event += 1;
-        self.camera = [tracker(0.), tracker(3.), tracker(-18.)];
+        self.camera = [
+            tracker(self.spawn[0] - self.yaw.sin() * 6.),
+            tracker(self.spawn[1] + 3.),
+            tracker(self.spawn[2] - self.yaw.cos() * 6.),
+        ];
     }
     fn step(&mut self, push: f32, turn: f32, brake: f32, jump: bool, trick: u32) {
         self.grind_cooldown = (self.grind_cooldown - DT).max(0.);
@@ -244,7 +256,12 @@ impl Game {
         self.world.set_angvel(self.player, [0.; 3]);
         self.world.step(DT);
         let s = self.world.read(self.player).unwrap();
-        if s.position[1] < -8. || s.position[0].abs() > 70. || s.position[2].abs() > 70. {
+        if s.position[1] < self.bounds[2]
+            || s.position[0] < self.bounds[0]
+            || s.position[0] > self.bounds[1]
+            || s.position[2] < self.bounds[3]
+            || s.position[2] > self.bounds[4]
+        {
             self.reset();
         }
         self.publish();
@@ -451,6 +468,61 @@ pub extern "C" fn add_ramp(x: f32, z: f32, width: f32, length: f32, height: f32,
             })
             .unwrap();
     });
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn set_spawn(x: f32, y: f32, z: f32, yaw: f32) {
+    if [x, y, z, yaw].iter().any(|v| !v.is_finite()) {
+        return;
+    }
+    GAME.with(|g| {
+        let mut game = g.borrow_mut();
+        game.spawn = [x, y, z];
+        game.spawn_yaw = yaw;
+        game.reset();
+    });
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn set_bounds(min_x: f32, max_x: f32, min_y: f32, min_z: f32, max_z: f32) {
+    if [min_x, max_x, min_y, min_z, max_z]
+        .iter()
+        .any(|v| !v.is_finite())
+        || min_x >= max_x
+        || min_z >= max_z
+    {
+        return;
+    }
+    GAME.with(|g| g.borrow_mut().bounds = [min_x, max_x, min_y, min_z, max_z]);
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn mesh_triangle(
+    ax: f32,
+    ay: f32,
+    az: f32,
+    bx: f32,
+    by: f32,
+    bz: f32,
+    cx: f32,
+    cy: f32,
+    cz: f32,
+) {
+    let triangle = [[ax, ay, az], [bx, by, bz], [cx, cy, cz]];
+    if triangle.iter().flatten().any(|v| !v.is_finite()) {
+        return;
+    }
+    GAME.with(|g| {
+        let mut game = g.borrow_mut();
+        if game.mesh_triangles.len() < 100_000 {
+            game.mesh_triangles.push(triangle);
+        }
+    });
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn commit_mesh() -> u32 {
+    GAME.with(|g| {
+        let mut game = g.borrow_mut();
+        let triangles = std::mem::take(&mut game.mesh_triangles);
+        u32::from(game.world.set_ground_with_friction(triangles.into_iter(), 0.).is_ok())
+    })
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn add_rail(ax: f32, y: f32, az: f32, bx: f32, bz: f32) {

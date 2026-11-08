@@ -1,3 +1,4 @@
+import { xboxState } from "./gamepad";
 export class Input {
   keys = new Set<string>();
   jump = false;
@@ -5,6 +6,8 @@ export class Input {
   orbit = 0;
   controller = false;
   pushing = false;
+  controllerLabel = "Keyboard · connect Xbox and press A";
+  private uiPrevious: Record<string, boolean> = {};
   private padJump = false;
   private padTrick = 0;
   constructor() {
@@ -41,35 +44,51 @@ export class Input {
     this.padJump = false;
     this.padTrick = 0;
   }
+  private pad() {
+    const pads = [...(navigator.getGamepads?.() ?? [])].filter(
+      (p) => p?.connected,
+    );
+    const state = xboxState(
+      pads.find((p) => p?.mapping === "standard") ?? pads[0] ?? undefined,
+    );
+    this.controller = state.supported;
+    this.controllerLabel = state.label;
+    return state;
+  }
+  menuActions() {
+    const state = this.pad();
+    const result: Record<string, boolean> = {};
+    for (const key of [
+      "menu",
+      "back",
+      "accept",
+      "up",
+      "down",
+      "left",
+      "right",
+    ] as const) {
+      result[key] = state[key] && !this.uiPrevious[key];
+      this.uiPrevious[key] = state[key];
+    }
+    return result;
+  }
   sample() {
-    const pad = [...navigator.getGamepads()].find((p) => p?.connected);
-    this.controller = !!pad;
-    const axis = pad?.axes[0] ?? 0;
+    const pad = this.pad();
     const turn =
       (this.keys.has("KeyD") ? 1 : 0) -
       (this.keys.has("KeyA") ? 1 : 0) +
-      (Math.abs(axis) > 0.12 ? axis : 0);
-    const push =
-      this.keys.has("KeyW") ||
-      this.keys.has("ArrowUp") ||
-      pad?.buttons[0]?.pressed
-        ? 1
-        : 0;
+      pad.turn;
+    const push = Math.max(
+      this.keys.has("KeyW") || this.keys.has("ArrowUp") ? 1 : 0,
+      pad.push,
+    );
     this.pushing = push > 0;
-    const brake =
-      this.keys.has("KeyS") ||
-      this.keys.has("ArrowDown") ||
-      pad?.buttons[1]?.pressed
-        ? 1
-        : 0;
-    const pj = !!(pad?.buttons[2]?.pressed || pad?.buttons[6]?.pressed);
-    const pt = pad?.buttons[3]?.pressed
-      ? 1
-      : pad?.buttons[4]?.pressed
-        ? 2
-        : pad?.buttons[5]?.pressed
-          ? 3
-          : 0;
+    const brake = Math.max(
+      this.keys.has("KeyS") || this.keys.has("ArrowDown") ? 1 : 0,
+      pad.brake,
+    );
+    const pj = pad.jump,
+      pt = pad.trick;
     const jump = this.jump || (pj && !this.padJump);
     const trick = this.trick || (pt !== this.padTrick ? pt : 0);
     this.padJump = pj;
@@ -79,7 +98,7 @@ export class Input {
     const orbit =
       (this.keys.has("ArrowRight") ? 1 : 0) -
       (this.keys.has("ArrowLeft") ? 1 : 0) +
-      (pad?.axes[2] ?? 0);
+      pad.orbit;
     return {
       push,
       turn: Math.max(-1, Math.min(1, turn)),
@@ -87,7 +106,7 @@ export class Input {
       jump: +jump,
       trick,
       orbit,
-      reset: !!pad?.buttons[8]?.pressed,
+      reset: pad.reset,
     };
   }
 }

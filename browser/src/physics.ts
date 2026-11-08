@@ -12,6 +12,10 @@ export type Physics = {
   state_ptr(): number;
   add_box(...args: number[]): void;
   add_ramp(...args: number[]): void;
+  set_spawn(x: number, y: number, z: number, yaw: number): void;
+  set_bounds(...args: number[]): void;
+  mesh_triangle(...args: number[]): void;
+  commit_mesh(): number;
   add_rail(ax: number, y: number, az: number, bx: number, bz: number): void;
 };
 export async function loadPhysics(): Promise<Physics> {

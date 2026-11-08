@@ -123,3 +123,5 @@ mods/world-audio-test/logs/
 /browser/public/SOURCE.txt
 # Original CC0 browser placeholder, intentionally distributable.
 !/assets/characters/custom/yard-skater.glb
+/browser/public/environments/
+!/assets/environments/custom/import-sandbox.gltf
