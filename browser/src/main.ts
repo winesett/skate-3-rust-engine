@@ -1,4 +1,5 @@
 import "./style.css";
+import { boardTrickRotation } from "./tricks";
 import {
   Engine,
   ImageProcessingConfiguration,
@@ -497,7 +498,7 @@ async function start() {
     if (lastController !== input.controller) {
       lastController = input.controller;
       $("control-legend").innerHTML = input.controller
-        ? "<kbd>A / RT</kbd> push <kbd>LS</kbd> steer / balance <kbd>B</kbd> brake <kbd>X / LT</kbd> ollie<br><kbd>Y</kbd> kickflip <kbd>LB</kbd> heelflip <kbd>RB</kbd> shove-it <kbd>RS</kbd> camera <kbd>View</kbd> reset <kbd>Menu</kbd> garage"
+        ? "<kbd>A / RT</kbd> push <kbd>LS</kbd> steer / balance <kbd>B</kbd> brake <kbd>X / LT</kbd> ollie<br><kbd>Y</kbd> kickflip <kbd>LB</kbd> heelflip <kbd>RB</kbd> shove-it <kbd>Y + RB</kbd> varial <kbd>RS</kbd> camera <kbd>View</kbd> reset <kbd>Menu</kbd> garage"
         : keyboardLegend;
       if (park.spots.length > 1)
         $("control-legend").innerHTML += input.controller
@@ -614,6 +615,7 @@ async function start() {
     "Bail — finish the flip",
     "50–50 grind landed",
     "Bail — lost the grind",
+    "Varial kickflip",
   ];
   loadSession();
   engine.runRenderLoop(() => {
@@ -651,15 +653,9 @@ async function start() {
       state[3],
       -Math.atan2(state[12], state[13]) - (state[20] ? state[21] * 0.15 : 0),
     );
-    const phase = Math.min(state[7] / 0.5, 1),
-      flip =
-        state[6] === 2
-          ? Math.PI * 2 * phase
-          : state[6] === 3
-            ? -Math.PI * 2 * phase
-            : 0;
-    board.rotation.z = flip;
-    board.rotation.y = state[6] === 4 ? Math.PI * 2 * phase : 0;
+    const rotation = boardTrickRotation(state[6], state[7]);
+    board.rotation.z = rotation.flip;
+    board.rotation.y = rotation.shove;
     const mode = state[20]
       ? "crouch"
       : state[5] === 0
@@ -734,7 +730,7 @@ async function start() {
       $("status").textContent = "FREE SKATE";
       $("trick").textContent = "Find your line.";
       $("hint").textContent = input.controller
-        ? "Xbox: A/RT push · X/LT ollie · Y/LB/RB tricks · Menu garage"
+        ? "Xbox: A/RT push · X/LT ollie · Y kickflip · Y+RB varial · LB/RB tricks · Menu garage"
         : (park.spots[selectedSpot]?.hint ?? "Find your line.");
     }
     const progress = goals.update(state);

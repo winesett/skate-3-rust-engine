@@ -76,3 +76,10 @@ See README.md and browser/docs/CHARACTERS.md for setup, controls, model import a
 - All 22 Node checks pass, including glTF validation, actual shipped GLB collision driving all three spawns, climbing the alley bank and catching the plaza rail in actual WASM; goal reset/bail and minimap orientation checks. Strict TypeScript and production Vite build pass. Existing large JavaScript bundle warning remains.
 - Browser QA: Bolt renders in the city at about 60 FPS on this Mac; pushed, ollied and caught the plaza rail; popped out and banked 203 points; landed a 250-point kickflip and completed all goals. G cycled all spots; garage selector traveled to Civic Steps; synthetic Xbox D-pad Up traveled to Bank Alley and updated the HUD. Physical controller hardware is still unverified.
 - Scope: closed city skate spot; no interiors, traffic/NPC simulation, arbitrary-surface grinding or additional grind styles. New installs default to city; existing park selections are retained.
+
+## Kickflip and varial kickflip — 2026-11-08
+
+- Retained kickflip on J / Xbox Y; added V / Xbox Y+RB varial kickflip with full board roll plus 180-degree shove, 450-point clean landing, named HUD feedback and session flip-goal support. A 180 ms chord window handles controller buttons arriving a few frames apart.
+- Synchronized flip completion/capture checks with the half-second board animation; corrected pop shove-it board yaw to 180 degrees. Invalid trick IDs are ignored; late varials bail without points. Shove-it alone no longer completes the flip goal.
+- Rebuilt shipped WASM. Passed 26 Node tests, four native host Rust tests and strict TypeScript/production build. Added varial landing/bail/reset/chord, Xbox mapping and combined rotation checks.
+- Browser QA: keyboard varial landed for 450 points, kickflip added 250, and synthetic Xbox X then Y+RB (40 ms apart) selected/landed varial for another 450. Paused midair and visually verified the board both flipped and turned under Bolt with “Varial kickflip” feedback. Physical Xbox hardware remains unverified.

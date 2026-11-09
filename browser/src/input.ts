@@ -28,8 +28,9 @@ export class Input {
       if (!e.repeat) {
         if (e.code === "Space") this.jump = true;
         this.trick =
-          ({ KeyJ: 1, KeyK: 2, KeyL: 3 } as Record<string, number>)[e.code] ??
-          this.trick;
+          ({ KeyJ: 1, KeyK: 2, KeyL: 3, KeyV: 4 } as Record<string, number>)[
+            e.code
+          ] ?? this.trick;
       }
     });
     window.addEventListener("keyup", (e) => this.keys.delete(e.code));

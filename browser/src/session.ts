@@ -1,3 +1,4 @@
+const isFlip = (id: number) => id === 2 || id === 3 || id === 8;
 /** Session goals consume actual physics events; a bail never completes a landing goal. */
 export class SessionGoals {
   flip = false;
@@ -8,11 +9,10 @@ export class SessionGoals {
   private flipInAir = false;
   update(state: readonly number[] | Float32Array) {
     if (state[4] >= 25 / 3.6) this.speed = true;
-    if (state[6] >= 2 && state[6] <= 4) this.flipInAir = true;
+    if (isFlip(state[6])) this.flipInAir = true;
     if (state[10] !== this.lastEvent) {
       if (state[8] > this.score) {
-        if ((state[9] >= 2 && state[9] <= 4) || this.flipInAir)
-          this.flip = true;
+        if (isFlip(state[9]) || this.flipInAir) this.flip = true;
         if (state[9] === 6) this.grind = true;
         this.flipInAir = false;
       }

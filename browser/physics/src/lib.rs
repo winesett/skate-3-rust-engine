@@ -124,7 +124,7 @@ impl Game {
             && self.grind_cooldown == 0.
             && !self.grounded
             && self.airborne > 0.08
-            && (self.trick <= 1 || self.trick_time > 0.42)
+            && (self.trick <= 1 || self.trick_time >= 0.5)
         {
             for (index, rail) in self.rails.iter().enumerate() {
                 if let Some((distance, speed)) =
@@ -217,8 +217,12 @@ impl Game {
         }
         if !self.grounded {
             self.airborne += DT;
-            if trick > 0 && self.trick <= 1 {
-                self.trick = trick + 1;
+            // Reserve state IDs 5-7 for bail/grind events. A varial combines
+            // a kickflip with a 180 shove-it. Allow a short controller chord
+            // window so Y + RB works even when the buttons arrive a frame apart.
+            let varial_chord = trick == 4 && matches!(self.trick, 2 | 4) && self.trick_time < 0.18;
+            if (1..=4).contains(&trick) && (self.trick <= 1 || varial_chord) {
+                self.trick = if trick == 4 { 8 } else { trick + 1 };
                 self.trick_time = 0.;
             }
             self.trick_time += DT;
@@ -228,7 +232,7 @@ impl Game {
             && self.airborne > 0.12
             && (self.trick > 0 || self.pending_score > 0.)
         {
-            let complete = self.trick <= 1 || self.trick_time > 0.42;
+            let complete = self.trick <= 1 || self.trick_time >= 0.5;
             self.last = if !complete {
                 5
             } else if self.pending_score > 0. {
@@ -242,6 +246,7 @@ impl Game {
                         2 => 250.,
                         3 => 300.,
                         4 => 180.,
+                        8 => 450.,
                         1 => 100.,
                         _ => 0.,
                     };
@@ -521,7 +526,11 @@ pub extern "C" fn commit_mesh() -> u32 {
     GAME.with(|g| {
         let mut game = g.borrow_mut();
         let triangles = std::mem::take(&mut game.mesh_triangles);
-        u32::from(game.world.set_ground_with_friction(triangles.into_iter(), 0.).is_ok())
+        u32::from(
+            game.world
+                .set_ground_with_friction(triangles.into_iter(), 0.)
+                .is_ok(),
+        )
     })
 }
 #[unsafe(no_mangle)]

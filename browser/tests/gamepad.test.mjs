@@ -57,3 +57,13 @@ test("disconnected or unmapped pad cannot generate gameplay actions", () => {
   assert.equal(s.turn, 0);
   assert.equal(s.push, 0);
 });
+
+test("Xbox Y plus RB selects varial while each button retains its trick", () => {
+  const p = pad();
+  p.buttons[3].pressed = true;
+  assert.equal(xboxState(p).trick, 1);
+  p.buttons[5].pressed = true;
+  assert.equal(xboxState(p).trick, 4);
+  p.buttons[3].pressed = false;
+  assert.equal(xboxState(p).trick, 3);
+});

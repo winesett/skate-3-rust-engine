@@ -31,19 +31,19 @@ test("actual WASM: flat ground, movement, brake, turn, ollie, all tricks, reset"
   step(120, 0, 0.4, 1);
   assert.ok(state()[4] < speed);
   assert.ok(state()[3] > 0.1);
-  for (let trick = 1; trick <= 3; trick++) {
+  for (let trick = 1; trick <= 4; trick++) {
     p.reset();
     step(120);
     step(1, 0, 0, 0, 1);
     step(25, 0, 0, 0, 0, trick);
     assert.equal(state()[5], 0);
-    assert.equal(state()[6], trick + 1);
+    assert.equal(state()[6], trick === 4 ? 8 : trick + 1);
     assert.ok(state()[1] > 0.5);
     step(180);
     assert.equal(state()[5], 1);
-    assert.equal(state()[9], trick + 1);
+    assert.equal(state()[9], trick === 4 ? 8 : trick + 1);
   }
-  assert.equal(state()[8], 730);
+  assert.equal(state()[8], 1180);
   p.reset();
   step(120);
   assert.ok(Math.abs(state()[2] + 12) < 0.01);
@@ -73,4 +73,32 @@ test("actual WASM: early trick is a bail and cannot bank points", async () => {
   step(90);
   assert.equal(state()[9], 5);
   assert.equal(state()[8], 0);
+});
+
+test("actual WASM: varial controller chord upgrades early flip, rejects late tricks and resets cleanly", async () => {
+  const { p, state, step } = await game();
+  step(120);
+  step(1, 0, 0, 0, 1);
+  step(5, 0, 0, 0, 0, 1);
+  step(1, 0, 0, 0, 0, 4);
+  assert.equal(state()[6], 8);
+  step(180);
+  assert.equal(state()[9], 8);
+  assert.equal(state()[8], 450);
+  p.reset();
+  step(120);
+  step(1, 0, 0, 0, 1);
+  step(105);
+  step(1, 0, 0, 0, 0, 4);
+  step(90);
+  assert.equal(state()[9], 5);
+  assert.equal(state()[8], 450, "late varial awards no score");
+  p.reset();
+  step(120);
+  step(1, 0, 0, 0, 1);
+  step(1, 0, 0, 0, 0, 99);
+  assert.equal(state()[6], 1, "unknown trick ignored");
+  p.reset();
+  step(120);
+  assert.equal(state()[6], 0);
 });

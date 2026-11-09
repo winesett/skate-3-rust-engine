@@ -31,7 +31,7 @@ export function xboxState(pad: PadLike | undefined) {
     push: Math.max(down(0) ? 1 : 0, value(7)),
     brake: down(1) ? 1 : 0,
     jump: down(2) || down(6),
-    trick: down(3) ? 1 : down(4) ? 2 : down(5) ? 3 : 0,
+    trick: down(3) && down(5) ? 4 : down(3) ? 1 : down(4) ? 2 : down(5) ? 3 : 0,
     reset: down(8),
     menu: down(9),
     back: down(1),

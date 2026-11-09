@@ -23,6 +23,7 @@ Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live
 | Brake | S / Down | B / right face |
 | Ollie | Space | X / left face or LT |
 | Kickflip in air | J | Y / top face |
+| Varial kickflip in air | V | Y + RB together |
 | Heelflip in air | K | LB |
 | Pop shove-it in air | L | RB |
 | Balance during 50–50 grind | A / D | Left stick |
@@ -36,7 +37,7 @@ Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live
 | Physics diagnostics | F2 | — |
 | Debug slow motion / pause / single step | T / P / N while F2 is open | — |
 
-Ollie first, then choose a trick while airborne. Give flips roughly half a second to complete. Completed tricks score on landing; late flips bail without points. Reset preserves the session score. The workshop pauses physics.
+Ollie first, then choose a trick while airborne. Give flips half a second to complete. Varial kickflips combine a full kickflip with a 180-degree shove-it and award 450 points on a clean landing. Completed tricks score on landing; late flips bail without points. Reset preserves the session score. The workshop pauses physics.
 
 **Grinding:** a long practice rail is directly ahead of spawn. Hold W for about a second, then tap Space and coast. Descending onto the rail with the board aligned automatically catches a 50–50. Use A/D (left stick) to keep the balance marker centered, Space (X/LT) to pop out, or ride off the end. Hold A/D as you pop to choose the exit side. S/B brakes on the rail. Points build while sliding and bank when you land; losing balance or stalling drops the pending grind points. Rails catch in either direction. Sideways approaches, unfinished flips, and simply rolling into a rail do not attach. Alt-tab clears held keys. Click the game after interacting with another application.
 
