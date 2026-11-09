@@ -1,1 +1,45 @@
-{"characters":[{"id":"yard-skater","name":"Yard Skater — original","file":"yard-skater.glb","scale":1,"rotation":0}]}
+{
+  "characters": [
+    {
+      "id": "yard-skater",
+      "name": "Yard Skater \u2014 original",
+      "file": "yard-skater.glb",
+      "scale": 1,
+      "rotation": 0
+    },
+    {
+      "id": "bolt",
+      "name": "Bolt \u2014 cartoon robot",
+      "file": "quaternius/robot-expressive.glb",
+      "scale": 0.34,
+      "rotation": 90,
+      "offset": [
+        0,
+        0,
+        0
+      ],
+      "animations": {
+        "idle": "Idle",
+        "ride": "Idle",
+        "push": "Walking",
+        "crouch": "Idle",
+        "jump": "Idle"
+      },
+      "boneMap": {
+        "hips": "Hips",
+        "spine": "Torso",
+        "head": "Head",
+        "leftUpLeg": "UpperLeg.L",
+        "rightUpLeg": "UpperLeg.R",
+        "leftLeg": "LowerLeg.L",
+        "rightLeg": "LowerLeg.R",
+        "leftUpperArm": "UpperArm.L",
+        "rightUpperArm": "UpperArm.R",
+        "leftForeArm": "LowerArm.L",
+        "rightForeArm": "LowerArm.R",
+        "leftFoot": "Foot.L",
+        "rightFoot": "Foot.R"
+      }
+    }
+  ]
+}

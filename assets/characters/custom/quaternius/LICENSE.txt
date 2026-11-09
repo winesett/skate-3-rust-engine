@@ -1,0 +1,4 @@
+RobotExpressive is by Tomás Laulhé (Quaternius), with modifications by Don McCurdy.
+CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
+The upstream model README states CC0 1.0. See UPSTREAM.md and SOURCE.md for provenance.
+This asset is separate from the GPL-licensed game code and the three.js library.

@@ -39,6 +39,10 @@ Ollie first, then choose a trick while airborne. Give flips roughly half a secon
 
 **Grinding:** a long practice rail is directly ahead of spawn. Hold W for about a second, then tap Space and coast. Descending onto the rail with the board aligned automatically catches a 50–50. Use A/D (left stick) to keep the balance marker centered, Space (X/LT) to pop out, or ride off the end. Hold A/D as you pop to choose the exit side. S/B brakes on the rail. Points build while sliding and bank when you land; losing balance or stalling drops the pending grind points. Rails catch in either direction. Sideways approaches, unfinished flips, and simply rolling into a rail do not attach. Alt-tab clears held keys. Click the game after interacting with another application.
 
+## Included cartoon skater
+
+Press **C** and select **Bolt — cartoon robot** for the rigged yellow Quaternius robot. His original 14 clips (including Dance and Wave) can be previewed in the workshop. Catalog tuning fits him to the board; Idle/Walking clips provide the initial ride/push animation, rather than custom motion-captured skating. The CC0 model is credited in `assets/characters/custom/quaternius/SOURCE.md`; repaired skin weights pass glTF validation. Yard Skater remains selectable.
+
 ## Custom characters
 
 Press **C**, select a GLB (preferred) or a glTF together with its .bin/textures and optional character JSON, inspect the rig and animation preview, adjust height and facing, and choose **Use this character**. Files and adjustments persist in this browser via IndexedDB; nothing is uploaded. Import limit is 50 MB total. Imported characters do not change physics.
@@ -99,4 +103,4 @@ For GPL distribution, publish the corresponding complete source of the exact bin
 
 ## License and credit
 
-GPL-3.0-only for this fork's game code, following upstream. Copyright (c) 2026 dumbad and the Skate 3 Rust Engine contributors; SkatePlus additions (c) 2026 Winesett contributors. Preserve [LICENSE](LICENSE). Credit to dumbad's reverse-engineering research and tools, Chasm's renderer/rewrite work, and all upstream contributors. Original generated Yard Skater asset, its generator, and Import Sandbox are CC0-1.0. Babylon.js is Apache-2.0; Rapier is Apache-2.0; other third-party notices retain their licenses. This is an unofficial independent prototype, not affiliated with Electronic Arts.
+GPL-3.0-only for this fork's game code, following upstream. Copyright (c) 2026 dumbad and the Skate 3 Rust Engine contributors; SkatePlus additions (c) 2026 Winesett contributors. Preserve [LICENSE](LICENSE). Credit to dumbad's reverse-engineering research and tools, Chasm's renderer/rewrite work, and all upstream contributors. Original generated Yard Skater asset, its generator, and Import Sandbox are CC0-1.0. Bolt / RobotExpressive by Tomás Laulhé (Quaternius), converted with facial expression additions by Don McCurdy, is CC0-1.0; attribution and the pinned source are included. Babylon.js is Apache-2.0; Rapier is Apache-2.0; other third-party notices retain their licenses. This is an unofficial independent prototype, not affiliated with Electronic Arts.

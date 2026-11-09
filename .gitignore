@@ -125,3 +125,5 @@ mods/world-audio-test/logs/
 !/assets/characters/custom/yard-skater.glb
 /browser/public/environments/
 !/assets/environments/custom/import-sandbox.gltf
+# CC0 cartoon robot, with pinned source and attribution alongside it.
+!/assets/characters/custom/quaternius/robot-expressive.glb

@@ -25,3 +25,8 @@ await cp(
   new URL("assets/environments/custom/LICENSE.txt", root),
   new URL("Import-Sandbox-CC0.txt", out),
 );
+
+await cp(
+  new URL("assets/characters/custom/quaternius/LICENSE.txt", root),
+  new URL("Bolt-Robot-CC0.txt", out),
+);
