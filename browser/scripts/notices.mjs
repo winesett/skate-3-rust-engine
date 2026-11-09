@@ -30,3 +30,9 @@ await cp(
   new URL("assets/characters/custom/quaternius/LICENSE.txt", root),
   new URL("Bolt-Robot-CC0.txt", out),
 );
+
+await cp(
+  new URL("assets/environments/custom/junction/", root),
+  new URL("Junction-City/", out),
+  { recursive: true, filter: (source) => !source.endsWith(".glb") },
+);

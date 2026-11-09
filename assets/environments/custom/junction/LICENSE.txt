@@ -1,0 +1,5 @@
+Kenney city building assets are CC0-1.0; see Kenney-LICENSE.txt.
+The original SkatePlus Junction layout, added geometry and authored scene additions
+are dedicated to CC0 1.0 Universal to the extent possible under law:
+https://creativecommons.org/publicdomain/zero/1.0/
+Application and physics source code retain GPL-3.0-only and third-party licenses.

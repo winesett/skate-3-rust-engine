@@ -12,8 +12,17 @@ import { assetSource, type Entry } from "./characters";
 import { buildPark } from "./park";
 import { collisionTriangles } from "./collision";
 import type { Physics } from "./physics";
+import type { Spot, MapBox } from "./map";
 export type EnvironmentEntry = Entry & {
   builtin?: "yard";
+  mood?: "sunset";
+  spots?: {
+    id: string;
+    name: string;
+    spawn: [number, number, number];
+    heading: number;
+    hint: string;
+  }[];
   spawn?: [number, number, number];
   heading?: number;
   rails?: { a: [number, number, number]; b: [number, number, number] }[];
@@ -22,6 +31,11 @@ export type World = {
   name: string;
   solids: AbstractMesh[];
   diagnostics: string;
+  spots: Spot[];
+  bounds: [number, number, number, number];
+  obstacles: MapBox[];
+  shadowCasters: AbstractMesh[];
+  mood?: "sunset";
   dispose(): void;
 };
 const base = import.meta.env.BASE_URL;
@@ -82,6 +96,21 @@ export async function buildEnvironment(
       name: entry.name,
       solids: park.solids,
       diagnostics: "Original procedural park · two grindable rails",
+      spots: [
+        {
+          id: "yard",
+          name: "The Yard",
+          position: [0, 1, -12],
+          heading: 0,
+          hint: "Practice rail ahead: push, ollie, land aligned on the rail.",
+        },
+      ],
+      bounds: [-40, 40, -40, 40],
+      obstacles: [],
+      mood: undefined,
+      shadowCasters: meshes.filter((m) =>
+        /Tree|Planter|deck|Tabletop|Kicker|ledge/.test(m.name),
+      ),
       dispose() {
         meshes.forEach((m) => m.dispose());
         materials.forEach((m) => m.dispose());
@@ -106,6 +135,7 @@ export async function buildEnvironment(
   const railMaterial = new StandardMaterial("Imported park rail metal", scene);
   railMaterial.diffuseColor = Color3.FromHexString("#667d74");
   try {
+    container.addAllToScene();
     for (const node of container.rootNodes) node.parent = root;
     root.scaling.setAll(entry.scale);
     root.rotation.y = (entry.rotation * Math.PI) / 180;
@@ -160,15 +190,56 @@ export async function buildEnvironment(
       spawn.z,
       (((entry.heading ?? 0) + entry.rotation) * Math.PI) / 180,
     );
-    container.addAllToScene();
     container.animationGroups.forEach((a) => a.stop());
     for (const m of container.meshes) {
       if (m.name.toUpperCase().startsWith("COLLISION_")) m.isVisible = false;
       else m.receiveShadows = true;
     }
     const solids = container.meshes.filter((m) => m.getTotalVertices() > 0);
+    const spots: Spot[] = (entry.spots ?? []).map((s) => {
+      const position = Vector3.TransformCoordinates(
+        Vector3.FromArray(s.spawn),
+        transform,
+      );
+      if (
+        !position.asArray().every(Number.isFinite) ||
+        !Number.isFinite(s.heading)
+      )
+        throw new Error("Invalid spot transform.");
+      return {
+        id: s.id,
+        name: s.name,
+        position: position.asArray() as [number, number, number],
+        heading: ((s.heading + entry.rotation) * Math.PI) / 180,
+        hint: s.hint,
+      };
+    });
+    if (!spots.length)
+      spots.push({
+        id: "spawn",
+        name: entry.name,
+        position: spawn.asArray() as [number, number, number],
+        heading: (((entry.heading ?? 0) + entry.rotation) * Math.PI) / 180,
+        hint: "Explore your park, find a line, and land your tricks.",
+      });
+    const obstacles = container.meshes
+      .filter((m) => m.name.startsWith("COLLISION_Building"))
+      .map((m) => {
+        const b = m.getBoundingInfo().boundingBox;
+        return {
+          minX: b.minimumWorld.x,
+          minZ: b.minimumWorld.z,
+          maxX: b.maximumWorld.x,
+          maxZ: b.maximumWorld.z,
+        };
+      });
     return {
       name: entry.name,
+      spots,
+      bounds: [min.x, max.x, min.z, max.z],
+      obstacles,
+      mood: entry.mood,
+      shadowCasters: container.meshes.filter((m) => m.name.startsWith("CAST_")),
       solids: [...solids, ...railVisuals],
       diagnostics: `${triangles.length.toLocaleString()} collision triangles · spawn ${spawn
         .asArray()

@@ -422,3 +422,94 @@ input:focus-visible {
     gap: 8px;
   }
 }
+
+#session-goals {
+  position: absolute;
+  left: 34px;
+  top: 136px;
+  background: #17362ce8;
+  border: 1px solid #bacead44;
+  padding: 15px 18px;
+  border-radius: 7px;
+  pointer-events: none;
+  min-width: 165px;
+}
+#session-goals[hidden] {
+  display: none;
+}
+#session-goals ul {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 2;
+  color: #b5c7b9;
+}
+#session-goals li.complete {
+  color: #ecff86;
+}
+#city-map {
+  position: absolute;
+  right: 34px;
+  top: 149px;
+  width: 174px;
+  background: #17362ef0;
+  border: 1px solid #bacead44;
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: 0 8px 30px #142a1e33;
+}
+#city-map[hidden] {
+  display: none;
+}
+#minimap {
+  width: 160px;
+  height: 160px;
+  display: block;
+  border-radius: 4px;
+}
+#spot-name {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.7px;
+  margin: 10px 5px;
+}
+#next-spot {
+  font-size: 11px;
+  padding: 7px;
+  width: 100%;
+}
+#best-score {
+  display: block;
+  color: #edff98;
+  font-size: 10px;
+  letter-spacing: 1px;
+  margin-top: 7px;
+}
+@media (max-width: 700px) {
+  #session-goals {
+    left: 18px;
+    top: 123px;
+    min-width: 130px;
+    padding: 10px;
+  }
+  #session-goals ul {
+    font-size: 10px;
+  }
+  #city-map {
+    right: 18px;
+    top: 123px;
+    width: 124px;
+  }
+  #minimap {
+    width: 110px;
+    height: 110px;
+  }
+  #spot-name {
+    font-size: 9px;
+  }
+  #next-spot {
+    font-size: 9px;
+    padding: 5px;
+  }
+}

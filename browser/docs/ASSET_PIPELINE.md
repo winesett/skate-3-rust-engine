@@ -69,3 +69,9 @@ Connect your Xbox controller to the OS over USB or Bluetooth, open the game and 
 | Close menu | B |
 
 Use the Character workshop / Environment garage buttons inside the dialogs to move between them. File selection still uses the OS file picker with mouse/keyboard. Physics pauses while either dialog is open. Disconnecting clears pad input; unmapped devices are identified instead of guessing button positions. Hardware verification is separate from simulated Gamepad API tests; a physical Xbox controller has not yet been tested in this session.
+
+## Optional city presentation metadata
+
+Catalog environments may set `mood: "sunset"` and a `spots` list. Each spot has a unique `id`, display `name`, `spawn: [x,y,z]`, `heading` in degrees, and a short `hint`. Positions/headings use the same game coordinates as rails and the main spawn; environment scale, rotation and offset apply to all of them. See `assets/environments/custom/junction/entry.json`. Spots power the garage selector, G/D-pad Up travel, minimap and reset checkpoint. Absent spots fall back to the main spawn.
+
+Imported meshes named `CAST_` cast directional shadows; `COLLISION_Building` proxies appear on the city minimap. All visible imported meshes receive shadows. Junction's builder compensates for Babylon's glTF handedness conversion so its source positions match catalog metadata.

@@ -1,1 +1,137 @@
-{"environments":[{"id":"yard","name":"The Yard","builtin":"yard","scale":1,"rotation":0},{"id":"sandbox","name":"Import Sandbox — example glTF","file":"import-sandbox.gltf","scale":1,"rotation":0,"spawn":[0,1,-8],"heading":0,"rails":[{"a":[0,0.55,-3],"b":[0,0.55,7]}]}]}
+{
+  "environments": [
+    {
+      "id": "junction",
+      "name": "Junction City",
+      "file": "junction/junction-city.glb",
+      "scale": 1,
+      "rotation": 0,
+      "spawn": [
+        0,
+        1,
+        -24
+      ],
+      "heading": 0,
+      "mood": "sunset",
+      "rails": [
+        {
+          "a": [
+            0,
+            0.55,
+            -14
+          ],
+          "b": [
+            0,
+            0.55,
+            6
+          ]
+        },
+        {
+          "a": [
+            10,
+            0.63,
+            -3.8
+          ],
+          "b": [
+            10,
+            0.63,
+            3.8
+          ]
+        },
+        {
+          "a": [
+            -34,
+            0.55,
+            -13
+          ],
+          "b": [
+            -34,
+            0.55,
+            -3
+          ]
+        },
+        {
+          "a": [
+            18,
+            1.63,
+            9
+          ],
+          "b": [
+            18,
+            1.63,
+            17
+          ]
+        }
+      ],
+      "spots": [
+        {
+          "id": "plaza",
+          "name": "Junction Plaza",
+          "spawn": [
+            0,
+            1,
+            -24
+          ],
+          "heading": 0,
+          "hint": "Ollie onto the lime-marked center rail. Manual pads and benches flank the line."
+        },
+        {
+          "id": "alley",
+          "name": "Bank Alley",
+          "spawn": [
+            -34,
+            1,
+            -23
+          ],
+          "heading": 0,
+          "hint": "Build speed along the street, grind the low rail, then carry it over the banks."
+        },
+        {
+          "id": "civic",
+          "name": "Civic Steps",
+          "spawn": [
+            18,
+            1,
+            -15
+          ],
+          "heading": 0,
+          "hint": "Take the six-step gap, or circle behind the platform for a smooth bank approach."
+        }
+      ]
+    },
+    {
+      "id": "yard",
+      "name": "The Yard",
+      "builtin": "yard",
+      "scale": 1,
+      "rotation": 0
+    },
+    {
+      "id": "sandbox",
+      "name": "Import Sandbox \u2014 example glTF",
+      "file": "import-sandbox.gltf",
+      "scale": 1,
+      "rotation": 0,
+      "spawn": [
+        0,
+        1,
+        -8
+      ],
+      "heading": 0,
+      "rails": [
+        {
+          "a": [
+            0,
+            0.55,
+            -3
+          ],
+          "b": [
+            0,
+            0.55,
+            7
+          ]
+        }
+      ]
+    }
+  ]
+}

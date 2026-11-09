@@ -40,7 +40,8 @@
     </aside>
     <aside class="score">
       <span>SESSION SCORE</span><strong id="score">00000</strong
-      ><small id="speed">0.0 KM/H</small>
+      ><small id="speed">0.0 KM/H</small
+      ><small id="best-score">BEST 00000</small>
     </aside>
     <footer>
       <div>
@@ -54,6 +55,24 @@
         onto rails to grind
       </div>
     </footer>
+    <aside id="session-goals">
+      <span class="eyebrow">SESSION GOALS</span>
+      <ul>
+        <li id="goal-flip">○ Land a flip</li>
+        <li id="goal-grind">○ Bank a grind</li>
+        <li id="goal-speed">○ Reach 25 km/h</li>
+      </ul>
+    </aside>
+    <aside id="city-map" hidden>
+      <canvas
+        id="minimap"
+        width="160"
+        height="160"
+        aria-label="City spots and skater position"
+      ></canvas
+      ><strong id="spot-name">Junction Plaza</strong
+      ><button id="next-spot">Next spot <kbd>G</kbd></button>
+    </aside>
     <pre id="debug" hidden></pre>
     <dialog id="character-panel">
       <div class="panel-head">
@@ -182,7 +201,9 @@
         <pre id="environment-diagnostics">Original procedural park</pre>
         <p id="environment-status" role="status"></p>
         <button id="use-environment" class="primary">Load environment</button
-        ><button id="environment-character">Character workshop</button>
+        ><label>Current park spot<select id="spot-select"></select></label
+        ><button id="ride-spot">Ride selected spot</button>
+        <button id="environment-character">Character workshop</button>
         <p class="muted">
           Xbox: D-pad up/down chooses a field, left/right changes it, A
           activates, B returns. Menu opens/closes the garage.

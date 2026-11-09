@@ -1,6 +1,6 @@
 # SkatePlus — playable browser prototype
 
-A local skateboarding game built inside a fork of [SK8-ENGINE/skate-3-rust-engine](https://github.com/SK8-ENGINE/skate-3-rust-engine). Original procedural park, skateboard and rigged character; no EA game assets are needed or included. Original upstream documentation and attribution are preserved in [README-UPSTREAM.md](README-UPSTREAM.md).
+A local skateboarding game built inside a fork of [SK8-ENGINE/skate-3-rust-engine](https://github.com/SK8-ENGINE/skate-3-rust-engine). Original skate spots, a licensed Kenney city, skateboard and rigged characters; no EA game assets are needed or included. Original upstream documentation and attribution are preserved in [README-UPSTREAM.md](README-UPSTREAM.md).
 
 ## Start
 
@@ -28,6 +28,7 @@ Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live
 | Balance during 50–50 grind | A / D | Left stick |
 | Pop out of a grind | Space | X / left face or LT |
 | Camera orbit | Left / Right arrows | Right stick X |
+| Next city spot | G / minimap button | D-pad Up (outside menus) |
 | Reset position | R / Reset button | Back / View |
 | Character workshop | C / Character button | Garage navigation |
 | Environment garage | E / Environment button | Menu |
@@ -38,6 +39,20 @@ Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live
 Ollie first, then choose a trick while airborne. Give flips roughly half a second to complete. Completed tricks score on landing; late flips bail without points. Reset preserves the session score. The workshop pauses physics.
 
 **Grinding:** a long practice rail is directly ahead of spawn. Hold W for about a second, then tap Space and coast. Descending onto the rail with the board aligned automatically catches a 50–50. Use A/D (left stick) to keep the balance marker centered, Space (X/LT) to pop out, or ride off the end. Hold A/D as you pop to choose the exit side. S/B brakes on the rail. Points build while sliding and bank when you land; losing balance or stalling drops the pending grind points. Rails catch in either direction. Sideways approaches, unfinished flips, and simply rolling into a rail do not attach. Alt-tab clears held keys. Click the game after interacting with another application.
+
+## Junction City
+
+Choose **E → Junction City → Load environment**. New installs start here; saved park choices are preserved. This self-contained 4.4 MB scene uses 26 building instances from Kenney's **City Kit (Commercial) 2.1**, CC0, around an original skate layout:
+
+- **Junction Plaza:** center rail, long ledge, manual island, benches and kicker.
+- **Bank Alley:** low rail feeding connected banks and a raised deck.
+- **Civic Steps:** six steps, elevated rail, and an alternative bank approach.
+
+Use **G**, **D-pad Up**, or **Next spot** on the minimap to travel; the garage also has a spot selector. **R / View** returns to the selected spot. Spot travel keeps your session points. Land a flip, bank a grind and reach 25 km/h for the session goals. Best score is stored per environment in this browser; goals reset when loading a park.
+
+The city adds warm lighting, soft shadows, a gradient sky, a north-up minimap and speed-sensitive camera lookahead/FOV. Static visuals are merged into 16 material groups; 960 simple collision triangles keep decorative facade details out of the physics. This remains a closed skate spot, with no traffic, interiors or NPC simulation. Only configured rails grind.
+
+Asset source, license and reproducible Blender build are in [Junction's source record](assets/environments/custom/junction/SOURCE.md). The game remains GPL; the included city artwork is CC0.
 
 ## Included cartoon skater
 

@@ -1,0 +1,23 @@
+{
+  "kit_sha256": "f8b09b081c2bb88bcc126e2dec1cb40fd0dad7e7e591b6c26aaefe96fb35276b",
+  "used_models": [
+    "building-a",
+    "building-d",
+    "building-f",
+    "building-g",
+    "building-h",
+    "building-j",
+    "building-k",
+    "building-l",
+    "building-m",
+    "building-n",
+    "building-skyscraper-a",
+    "building-skyscraper-b",
+    "building-skyscraper-c",
+    "building-skyscraper-d",
+    "building-skyscraper-e"
+  ],
+  "visual_groups": 16,
+  "layout": "Original SkatePlus Junction City",
+  "license": "CC0-1.0"
+}

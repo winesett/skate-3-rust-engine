@@ -1,6 +1,7 @@
 import "./style.css";
 import {
   Engine,
+  ImageProcessingConfiguration,
   Scene,
   Color3,
   Color4,
@@ -19,6 +20,9 @@ import {
 import { loadPhysics } from "./physics";
 import { createBoard } from "./park";
 import { Input } from "./input";
+import { SessionGoals } from "./session";
+import { drawMap } from "./map";
+import { createSky } from "./sky";
 import {
   buildEnvironment,
   environmentCatalog,
@@ -51,6 +55,12 @@ async function start() {
   scene.fogMode = Scene.FOGMODE_EXP2;
   scene.fogDensity = 0.008;
   scene.fogColor = new Color3(0.75, 0.82, 0.83);
+  scene.imageProcessingConfiguration.toneMappingEnabled = true;
+  scene.imageProcessingConfiguration.toneMappingType =
+    ImageProcessingConfiguration.TONEMAPPING_ACES;
+  scene.imageProcessingConfiguration.exposure = 1.1;
+  scene.imageProcessingConfiguration.contrast = 1.05;
+  const sky = createSky(scene);
   const ambient = new HemisphericLight("Sky", new Vector3(0.2, 1, 0.3), scene);
   ambient.intensity = 0.65;
   ambient.groundColor = new Color3(0.35, 0.4, 0.3);
@@ -61,7 +71,15 @@ async function start() {
   );
   sun.position.set(25, 40, -20);
   sun.intensity = 0.85;
-  const shadows = new ShadowGenerator(1024, sun);
+  sun.autoUpdateExtends = false;
+  sun.autoCalcShadowZBounds = false;
+  sun.orthoLeft = -36;
+  sun.orthoRight = 36;
+  sun.orthoTop = 36;
+  sun.orthoBottom = -36;
+  sun.shadowMinZ = 1;
+  sun.shadowMaxZ = 160;
+  const shadows = new ShadowGenerator(2048, sun);
   shadows.usePercentageCloserFiltering = true;
   shadows.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
   shadows.bias = 0.0005;
@@ -87,6 +105,20 @@ async function start() {
     park = await buildEnvironment(scene, physics, environmentEntry);
   }
   $("environment-name").textContent = environmentEntry.name;
+  function presentWorld(previous?: typeof park) {
+    previous?.shadowCasters.forEach((m) => shadows.removeShadowCaster(m));
+    park.shadowCasters.forEach((m) => shadows.addShadowCaster(m));
+    const sunset = park.mood === "sunset";
+    sky.setMood(sunset);
+    sun.diffuse = sunset ? new Color3(1, 0.86, 0.7) : new Color3(1, 0.97, 0.9);
+    sun.intensity = sunset ? 1.45 : 1.1;
+    ambient.intensity = 0.75;
+    scene.fogDensity = sunset ? 0.0035 : 0.006;
+    scene.fogColor = sunset
+      ? new Color3(0.87, 0.79, 0.69)
+      : new Color3(0.75, 0.82, 0.83);
+  }
+  presentWorld();
   let switchingEnvironment = false;
   const skaterRoot = new TransformNode("Skater physics transform", scene);
   const board = createBoard(scene);
@@ -284,6 +316,47 @@ async function start() {
     }
   };
   const input = new Input();
+  let goals = new SessionGoals(),
+    best = 0,
+    selectedSpot = 0,
+    lastMapTime = 0;
+  const spotSelect = $<HTMLSelectElement>("spot-select");
+  function loadSession() {
+    goals = new SessionGoals();
+    try {
+      best =
+        Number(localStorage.getItem(`skateplus-best:${environmentEntry.id}`)) ||
+        0;
+    } catch {
+      best = 0;
+    }
+    spotSelect.replaceChildren(
+      ...park.spots.map((s, i) => {
+        const o = document.createElement("option");
+        o.value = String(i);
+        o.textContent = s.name;
+        return o;
+      }),
+    );
+    selectedSpot = 0;
+    $("city-map").hidden = park.spots.length < 2;
+  }
+  function rideSpot(index: number) {
+    selectedSpot = (index + park.spots.length) % park.spots.length;
+    const spot = park.spots[selectedSpot];
+    physics.set_spawn(...spot.position, spot.heading);
+    input.clear();
+    orbit = 0;
+    accumulator = 0;
+    event = -1;
+    feedbackUntil = 0;
+    spotSelect.value = String(selectedSpot);
+    $("spot-name").textContent = spot.name;
+    if (environmentDialog.open) environmentDialog.close();
+    canvas.focus();
+  }
+  $("next-spot").onclick = () => rideSpot(selectedSpot + 1);
+  $("ride-spot").onclick = () => rideSpot(Number(spotSelect.value));
   let pendingEnvironment: EnvironmentEntry = { ...environmentEntry };
   const environmentSelect = $<HTMLSelectElement>("environment-select");
   function environmentFields(e: EnvironmentEntry) {
@@ -393,8 +466,11 @@ async function start() {
       const previous = park;
       park = next;
       physics = nextPhysics;
+      presentWorld(previous);
       previous.dispose();
       environmentEntry = candidate;
+      loadSession();
+      lastController = undefined;
       const index = environmentEntries.findIndex((e) => e.id === candidate.id);
       if (index < 0) environmentEntries.push(candidate);
       else environmentEntries[index] = candidate;
@@ -414,7 +490,7 @@ async function start() {
     }
   };
   const keyboardLegend = $("control-legend").innerHTML;
-  let lastController = false;
+  let lastController: boolean | undefined = undefined;
   function controllerMenus() {
     const actions = input.menuActions();
     $("controller-status").textContent = input.controllerLabel;
@@ -423,6 +499,10 @@ async function start() {
       $("control-legend").innerHTML = input.controller
         ? "<kbd>A / RT</kbd> push <kbd>LS</kbd> steer / balance <kbd>B</kbd> brake <kbd>X / LT</kbd> ollie<br><kbd>Y</kbd> kickflip <kbd>LB</kbd> heelflip <kbd>RB</kbd> shove-it <kbd>RS</kbd> camera <kbd>View</kbd> reset <kbd>Menu</kbd> garage"
         : keyboardLegend;
+      if (park.spots.length > 1)
+        $("control-legend").innerHTML += input.controller
+          ? " · <kbd>D-pad ↑</kbd> next spot"
+          : " · <kbd>G</kbd> next spot";
       $("grind-instructions").textContent = input.controller
         ? "50–50 · LEFT STICK BALANCE · X / LT TO POP OUT"
         : "50–50 · A / D BALANCE · SPACE TO POP OUT";
@@ -437,7 +517,10 @@ async function start() {
       else garage();
       return;
     }
-    if (!active) return;
+    if (!active) {
+      if (actions.up && park.spots.length > 1) rideSpot(selectedSpot + 1);
+      return;
+    }
     if (actions.back) {
       active.close();
       return;
@@ -503,6 +586,7 @@ async function start() {
     if (e.code === "KeyR") physics.reset();
     if (e.code === "KeyC") workshop();
     if (e.code === "KeyE") garage();
+    if (e.code === "KeyG" && park.spots.length > 1) rideSpot(selectedSpot + 1);
     if (debug && e.code === "KeyT") slow = !slow;
     if (debug && e.code === "KeyP") paused = !paused;
     if (debug && e.code === "KeyN") singleStep = true;
@@ -531,6 +615,7 @@ async function start() {
     "50–50 grind landed",
     "Bail — lost the grind",
   ];
+  loadSession();
   engine.runRenderLoop(() => {
     const now = performance.now(),
       dt = Math.min((now - last) / 1000, 0.05);
@@ -606,7 +691,18 @@ async function start() {
         target.subtract(hit.pickedPoint).normalize().scale(0.35),
       );
     camera.position.copyFrom(desired);
-    camera.setTarget(target);
+    const ahead = new Vector3(Math.sin(state[3]), 0, Math.cos(state[3])).scale(
+      state[4] * 0.07,
+    );
+    camera.setTarget(target.add(ahead));
+    camera.fov +=
+      (0.85 + Math.min(state[4] / 15, 1) * 0.12 - camera.fov) *
+      (1 - Math.exp(-dt * 5));
+    sun.position.set(
+      Math.round((state[0] + 25) * 32) / 32,
+      45,
+      Math.round((state[2] - 25) * 32) / 32,
+    );
     if (state[10] !== event) {
       event = state[10];
       if (state[9] > 0) {
@@ -639,7 +735,36 @@ async function start() {
       $("trick").textContent = "Find your line.";
       $("hint").textContent = input.controller
         ? "Xbox: A/RT push · X/LT ollie · Y/LB/RB tricks · Menu garage"
-        : "Practice rail ahead: push W, ollie with Space, land aligned on the rail.";
+        : (park.spots[selectedSpot]?.hint ?? "Find your line.");
+    }
+    const progress = goals.update(state);
+    ["flip", "grind", "speed"].forEach((name, i) => {
+      const el = $(`goal-${name}`);
+      el.classList.toggle("complete", progress[i]);
+      el.textContent = `${progress[i] ? "✓" : "○"} ${["Land a flip", "Bank a grind", "Reach 25 km/h"][i]}`;
+    });
+    $("session-goals").hidden = debug;
+    if (Math.round(state[8]) > best) {
+      best = Math.round(state[8]);
+      try {
+        localStorage.setItem(
+          `skateplus-best:${environmentEntry.id}`,
+          String(best),
+        );
+      } catch {}
+    }
+    $("best-score").textContent = `BEST ${String(best).padStart(5, "0")}`;
+    if (park.spots.length > 1 && time - lastMapTime > 0.1) {
+      drawMap(
+        $<HTMLCanvasElement>("minimap"),
+        park.bounds,
+        park.obstacles,
+        park.spots,
+        state,
+        selectedSpot,
+      );
+      lastMapTime = time;
+      $("spot-name").textContent = park.spots[selectedSpot].name;
     }
     $("score").textContent = String(Math.round(state[8])).padStart(5, "0");
     $("speed").textContent = `${(state[4] * 3.6).toFixed(1)} KM/H`;
@@ -689,6 +814,12 @@ async function start() {
           id: environmentEntry.id,
           name: park.name,
           diagnostics: park.diagnostics,
+          spots: park.spots.map((s) => ({
+            id: s.id,
+            name: s.name,
+            position: s.position,
+          })),
+          activeSpot: park.spots[selectedSpot].id,
         };
       },
       get controller() {
