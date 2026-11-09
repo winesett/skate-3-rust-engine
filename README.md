@@ -120,3 +120,7 @@ For GPL distribution, publish the corresponding complete source of the exact bin
 ## License and credit
 
 GPL-3.0-only for this fork's game code, following upstream. Copyright (c) 2026 dumbad and the Skate 3 Rust Engine contributors; SkatePlus additions (c) 2026 Winesett contributors. Preserve [LICENSE](LICENSE). Credit to dumbad's reverse-engineering research and tools, Chasm's renderer/rewrite work, and all upstream contributors. Original generated Yard Skater asset, its generator, and Import Sandbox are CC0-1.0. Bolt / RobotExpressive by Tomás Laulhé (Quaternius), converted with facial expression additions by Don McCurdy, is CC0-1.0; attribution and the pinned source are included. Babylon.js is Apache-2.0; Rapier is Apache-2.0; other third-party notices retain their licenses. This is an unofficial independent prototype, not affiliated with Electronic Arts.
+
+## Private local character catalog
+
+For internal artwork, keep files under `assets/characters/custom/local/` and entries in `assets/characters/custom/manifest.local.json` using the normal `{ "characters": [...] }` catalog format. Both paths are Git-ignored. `npm run dev` merges these entries into the local character selector. `npm run build` prepares a public catalog, removes stale local assets from public/characters, and excludes this folder and its entries from dist. Re-run `npm run assets` after a production build to restore the local dev catalog. Keep proprietary artwork under the local folder; do not place it beside distributable models.

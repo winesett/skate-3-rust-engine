@@ -83,3 +83,9 @@ See README.md and browser/docs/CHARACTERS.md for setup, controls, model import a
 - Synchronized flip completion/capture checks with the half-second board animation; corrected pop shove-it board yaw to 180 degrees. Invalid trick IDs are ignored; late varials bail without points. Shove-it alone no longer completes the flip goal.
 - Rebuilt shipped WASM. Passed 26 Node tests, four native host Rust tests and strict TypeScript/production build. Added varial landing/bail/reset/chord, Xbox mapping and combined rotation checks.
 - Browser QA: keyboard varial landed for 450 points, kickflip added 250, and synthetic Xbox X then Y+RB (40 ms apart) selected/landed varial for another 450. Paused midair and visually verified the board both flipped and turned under Bolt with “Varial kickflip” feedback. Physical Xbox hardware remains unverified.
+
+## Private PLUS demo character — 2026-11-09
+
+- Adapted the user-referenced Portal project's existing PLUS GLB and neutral hand/arm pose metadata locally, preserving original mascot geometry/materials. Added five lightweight rigid-part clips (Idle/Ride/Push/Crouch/Jump); no humanoid skin/retargeting is claimed. Adapter and artwork remain under ignored assets/characters/custom/local/plus, with an ignored local catalog entry.
+- Added generic local character catalog support. Development merges manifest.local.json; production preparation removes private local files and omits their catalog entries. Confirmed public dist has neither the PLUS entry nor local artwork; no proprietary assets are pushed to the public fork.
+- Local adapted GLB validates with zero errors; all 26 existing Node checks and production TypeScript/build pass. Browser shows PLUS with face and stance, five clips loaded; pushed and landed a varial for 450 points at about 60 FPS. Selected PLUS for the local demo.

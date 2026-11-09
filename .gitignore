@@ -129,3 +129,6 @@ mods/world-audio-test/logs/
 !/assets/characters/custom/quaternius/robot-expressive.glb
 # CC0 Kenney-derived city scene, with source/license records and reproducible builder.
 !/assets/environments/custom/junction/junction-city.glb
+# Private character artwork stays on this machine; public builds omit it.
+/assets/characters/custom/local/
+/assets/characters/custom/manifest.local.json
