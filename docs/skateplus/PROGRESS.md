@@ -97,3 +97,10 @@ See README.md and browser/docs/CHARACTERS.md for setup, controls, model import a
 - Added Connect Xbox button, pairing guidance, live status and controller A/B/Menu dismissal. Dialog pauses physics and restores game focus. Existing Xbox mappings remain intact.
 - Browser QA verified correctly oriented original character on board, advancing source frames (look frame 59 to mitten frame 3), original fast-walk frame 11 while pushing, and a 450-point varial landing at ~60 FPS. Synthetic Xbox detection and A-to-dismiss pass. Physical controller pairing remains user/hardware dependent.
 - All 26 Node checks and strict TypeScript/production build pass; verified public output excludes private artwork and restored local catalogs afterward.
+
+## THPS-style Xbox controls — 2026-11-09
+
+- Mapped Xbox A to crouch/push while held and ollie on release; RT also pushes. Left stick steers/balances, down or LT brakes, X flips, B triggers a basic tuck/grab (200 points), Y enables rail capture, View resets and Menu opens garage. Stick left/down/right with X selects heel/shove/varial; RS orbits. Keyboard retains its controls, with I added for grab.
+- Added explicit WASM grind-input gating, retaining automatic keyboard rail capture. Menu-confirm A is suppressed until released to prevent accidental ollies. Disconnect cannot generate a release jump. Updated HUD, connection dialog and README.
+- Official Activision THPS 1+2 controls informed the face-button layout. Prototype still lacks manuals/reverts/wallplants/shoulder spins and the full THPS trick catalog; grab uses a basic tuck/board-tilt pose rather than hand-to-board IK.
+- Passed 27 Node checks (including manual grind gating, directional flip inputs and grab scoring), four native host tests, and strict TypeScript/production build. Browser synthetic Xbox QA: A held remained grounded and reached 7.38 m/s, release ollied, X landed for 250, B added 200, Y caught the plaza rail, A-release pop-out landed and banked ~230 grind points. Physical controller hardware remains unverified.

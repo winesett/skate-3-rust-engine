@@ -30,6 +30,7 @@ struct Game {
     rails: Vec<Rail>,
     grind: Option<Grind>,
     grind_cooldown: f32,
+    grind_input: bool,
     pending_score: f32,
     spawn: [f32; 3],
     spawn_yaw: f32,
@@ -88,6 +89,7 @@ impl Game {
             rails: Vec::new(),
             grind: None,
             grind_cooldown: 0.,
+            grind_input: true,
             pending_score: 0.,
             spawn: [0., 1., -12.],
             spawn_yaw: 0.,
@@ -120,7 +122,8 @@ impl Game {
     fn step(&mut self, push: f32, turn: f32, brake: f32, jump: bool, trick: u32) {
         self.grind_cooldown = (self.grind_cooldown - DT).max(0.);
         let state = self.world.read(self.player).unwrap();
-        if self.grind.is_none()
+        if self.grind_input
+            && self.grind.is_none()
             && self.grind_cooldown == 0.
             && !self.grounded
             && self.airborne > 0.08
@@ -219,10 +222,10 @@ impl Game {
             self.airborne += DT;
             // Reserve state IDs 5-7 for bail/grind events. A varial combines
             // a kickflip with a 180 shove-it. Allow a short controller chord
-            // window so Y + RB works even when the buttons arrive a frame apart.
+            // window when a directional flip input arrives a frame after the button.
             let varial_chord = trick == 4 && matches!(self.trick, 2 | 4) && self.trick_time < 0.18;
-            if (1..=4).contains(&trick) && (self.trick <= 1 || varial_chord) {
-                self.trick = if trick == 4 { 8 } else { trick + 1 };
+            if (1..=5).contains(&trick) && (self.trick <= 1 || varial_chord) {
+                self.trick = if trick >= 4 { trick + 4 } else { trick + 1 };
                 self.trick_time = 0.;
             }
             self.trick_time += DT;
@@ -247,6 +250,7 @@ impl Game {
                         3 => 300.,
                         4 => 180.,
                         8 => 450.,
+                        9 => 200.,
                         1 => 100.,
                         _ => 0.,
                     };
@@ -536,6 +540,10 @@ pub extern "C" fn commit_mesh() -> u32 {
 #[unsafe(no_mangle)]
 pub extern "C" fn add_rail(ax: f32, y: f32, az: f32, bx: f32, bz: f32) {
     GAME.with(|g| g.borrow_mut().add_rail([ax, y, az], [bx, y, bz]));
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn set_grind_input(held: u32) {
+    GAME.with(|g| g.borrow_mut().grind_input = held != 0);
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn tick(push: f32, turn: f32, brake: f32, jump: u32, trick: u32) {

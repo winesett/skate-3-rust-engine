@@ -28,12 +28,10 @@ test("Xbox face/shoulder/menu buttons map independently", () => {
   const p = pad();
   for (const [button, field, value] of [
     [0, "push", 1],
-    [1, "brake", 1],
-    [2, "jump", true],
-    [6, "jump", true],
-    [3, "trick", 1],
-    [4, "trick", 2],
-    [5, "trick", 3],
+    [1, "trick", 5],
+    [0, "jump", true],
+    [3, "grind", true],
+    [2, "trick", 1],
     [8, "reset", true],
     [9, "menu", true],
     [12, "up", true],
@@ -58,12 +56,21 @@ test("disconnected or unmapped pad cannot generate gameplay actions", () => {
   assert.equal(s.push, 0);
 });
 
-test("Xbox Y plus RB selects varial while each button retains its trick", () => {
+test("THPS flip directions, down braking and dedicated grind/grab buttons", () => {
   const p = pad();
-  p.buttons[3].pressed = true;
+  p.buttons[2].pressed = true;
   assert.equal(xboxState(p).trick, 1);
-  p.buttons[5].pressed = true;
+  p.axes[0] = -1;
+  assert.equal(xboxState(p).trick, 2);
+  p.axes[0] = 1;
   assert.equal(xboxState(p).trick, 4);
-  p.buttons[3].pressed = false;
+  p.axes[0] = 0;
+  p.axes[1] = 1;
   assert.equal(xboxState(p).trick, 3);
+  assert.equal(xboxState(p).brake, 1);
+  p.buttons[2].pressed = false;
+  p.buttons[1].pressed = true;
+  assert.equal(xboxState(p).trick, 5);
+  p.buttons[3].pressed = true;
+  assert.equal(xboxState(p).grind, true);
 });

@@ -6,9 +6,11 @@ export class Input {
   orbit = 0;
   controller = false;
   pushing = false;
+  crouching = false;
   controllerLabel = "Keyboard · connect Xbox and press A";
   private uiPrevious: Record<string, boolean> = {};
   private padJump = false;
+  private suppressPadJump = false;
   private padTrick = 0;
   constructor() {
     window.addEventListener("keydown", (e) => {
@@ -28,9 +30,12 @@ export class Input {
       if (!e.repeat) {
         if (e.code === "Space") this.jump = true;
         this.trick =
-          ({ KeyJ: 1, KeyK: 2, KeyL: 3, KeyV: 4 } as Record<string, number>)[
-            e.code
-          ] ?? this.trick;
+          (
+            { KeyJ: 1, KeyK: 2, KeyL: 3, KeyV: 4, KeyI: 5 } as Record<
+              string,
+              number
+            >
+          )[e.code] ?? this.trick;
       }
     });
     window.addEventListener("keyup", (e) => this.keys.delete(e.code));
@@ -40,9 +45,11 @@ export class Input {
   clear() {
     this.keys.clear();
     this.pushing = false;
+    this.crouching = false;
     this.jump = false;
     this.trick = 0;
     this.padJump = false;
+    this.suppressPadJump = true;
     this.padTrick = 0;
   }
   private pad() {
@@ -75,22 +82,24 @@ export class Input {
   }
   sample() {
     const pad = this.pad();
+    if (!pad.jump) this.suppressPadJump = false;
     const turn =
       (this.keys.has("KeyD") ? 1 : 0) -
       (this.keys.has("KeyA") ? 1 : 0) +
       pad.turn;
     const push = Math.max(
       this.keys.has("KeyW") || this.keys.has("ArrowUp") ? 1 : 0,
-      pad.push,
+      this.suppressPadJump && pad.jump ? 0 : pad.push,
     );
     this.pushing = push > 0;
     const brake = Math.max(
       this.keys.has("KeyS") || this.keys.has("ArrowDown") ? 1 : 0,
       pad.brake,
     );
-    const pj = pad.jump,
+    const pj = pad.jump && !this.suppressPadJump,
       pt = pad.trick;
-    const jump = this.jump || (pj && !this.padJump);
+    const jump = this.jump || (!pj && this.padJump && pad.supported);
+    this.crouching = pj;
     const trick = this.trick || (pt !== this.padTrick ? pt : 0);
     this.padJump = pj;
     this.padTrick = pt;
@@ -108,6 +117,7 @@ export class Input {
       trick,
       orbit,
       reset: pad.reset,
+      grind: !pad.supported || pad.grind,
     };
   }
 }

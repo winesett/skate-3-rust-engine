@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-async function setup(railX = 0) {
+async function setup(railX = 0, enabled = true) {
   const { instance } = await WebAssembly.instantiate(
     await readFile(
       new URL("../public/engine/skateplus_web_physics.wasm", import.meta.url),
@@ -10,6 +10,7 @@ async function setup(railX = 0) {
   );
   const p = instance.exports;
   p.init();
+  p.set_grind_input(+enabled);
   p.add_box(0, -0.5, 0, 50, 0.5, 50);
   p.add_rail(railX, 0.55, -4, railX, 12);
   const state = () =>
@@ -102,4 +103,21 @@ test("WASM: reset clears rail constraint and pending score", async () => {
   assert.equal(state()[20], 0);
   assert.equal(state()[22], 0);
   assert.ok(Math.abs(state()[2] + 12) < 0.01);
+});
+
+test("WASM: manual grind input requires Y before rail capture", async () => {
+  const off = await setup(0, false);
+  off.step(1, 0, 0, 0, 1);
+  for (let i = 0; i < 180; i++) {
+    off.step(1);
+    assert.equal(off.state()[20], 0);
+  }
+  const on = await setup(0, true);
+  on.step(1, 0, 0, 0, 1);
+  let caught = false;
+  for (let i = 0; i < 180; i++) {
+    on.step(1);
+    caught ||= on.state()[20] === 1;
+  }
+  assert.ok(caught);
 });

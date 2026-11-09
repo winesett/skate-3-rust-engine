@@ -20,14 +20,16 @@ Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live
 | --- | --- | --- |
 | Push | W / Up | A or analog RT |
 | Turn | A / D | Left stick |
-| Brake | S / Down | B / right face |
-| Ollie | Space | X / left face or LT |
-| Kickflip in air | J | Y / top face |
-| Varial kickflip in air | V | Y + RB together |
-| Heelflip in air | K | LB |
-| Pop shove-it in air | L | RB |
+| Brake | S / Down | Left stick down or LT |
+| Ollie | Space | Hold A to crouch, release A |
+| Kickflip in air | J | X |
+| Varial kickflip in air | V | Stick right + X |
+| Heelflip in air | K | Stick left + X |
+| Pop shove-it in air | L | Stick down + X |
+| Grab in air | I | B |
+| Catch a grind | Descend aligned onto rail | Hold Y while descending onto rail |
 | Balance during 50–50 grind | A / D | Left stick |
-| Pop out of a grind | Space | X / left face or LT |
+| Pop out of a grind | Space | Hold and release A |
 | Camera orbit | Left / Right arrows | Right stick X |
 | Next city spot | G / minimap button | D-pad Up (outside menus) |
 | Reset position | R / Reset button | Back / View |
@@ -39,7 +41,7 @@ Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live
 
 Ollie first, then choose a trick while airborne. Give flips half a second to complete. Varial kickflips combine a full kickflip with a 180-degree shove-it and award 450 points on a clean landing. Completed tricks score on landing; late flips bail without points. Reset preserves the session score. The workshop pauses physics.
 
-**Grinding:** a long practice rail is directly ahead of spawn. Hold W for about a second, then tap Space and coast. Descending onto the rail with the board aligned automatically catches a 50–50. Use A/D (left stick) to keep the balance marker centered, Space (X/LT) to pop out, or ride off the end. Hold A/D as you pop to choose the exit side. S/B brakes on the rail. Points build while sliding and bank when you land; losing balance or stalling drops the pending grind points. Rails catch in either direction. Sideways approaches, unfinished flips, and simply rolling into a rail do not attach. Alt-tab clears held keys. Click the game after interacting with another application.
+**Grinding:** a long practice rail is directly ahead of spawn. Hold W for about a second, then tap Space and coast. Descending onto the rail with the board aligned automatically catches a 50–50. Xbox requires holding Y to catch a rail. Use A/D (left stick) to keep the balance marker centered, Space (hold/release A) to pop out, or ride off the end. Hold A/D as you pop to choose the exit side. S / stick down / LT brakes on the rail. Points build while sliding and bank when you land; losing balance or stalling drops the pending grind points. Rails catch in either direction. Sideways approaches, unfinished flips, and simply rolling into a rail do not attach. Alt-tab clears held keys. Click the game after interacting with another application.
 
 ## Junction City
 
@@ -128,3 +130,5 @@ For internal artwork, keep files under `assets/characters/custom/local/` and ent
 The local **PLUS — original animated cycles** entry preserves the original 60 rendered animation sheets. It is a camera-facing animated character within the 3D physics world, with original idle/walk/reaction playback; it is not a skeletal 3D animation conversion. The earlier 3D experimental entry remains available. C opens all original clips for preview. Private sheets remain excluded from public builds.
 
 Click **Connect Xbox** for pairing instructions and live detection. Plug in a USB data cable or pair the pad through the computer's Bluetooth settings, return to the game, and press A. The connection dialog pauses skating; A/B/Menu returns to play. The browser reads pads connected to the host computer and cannot perform OS Bluetooth pairing itself.
+
+Xbox now uses a THPS-style face-button layout: hold A or RT to push, release A to ollie, X for flips, B for a basic grab, Y for rail capture. The directional X variants are this prototype's supported trick selection, not the full THPS trick catalog. Manuals, reverts, wallplants and shoulder-button spins are not implemented.

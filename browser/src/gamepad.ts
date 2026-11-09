@@ -29,9 +29,20 @@ export function xboxState(pad: PadLike | undefined) {
     turn: supported ? deadzone(pad!.axes[0] ?? 0) : 0,
     orbit: supported ? deadzone(pad!.axes[2] ?? 0) : 0,
     push: Math.max(down(0) ? 1 : 0, value(7)),
-    brake: down(1) ? 1 : 0,
-    jump: down(2) || down(6),
-    trick: down(3) && down(5) ? 4 : down(3) ? 1 : down(4) ? 2 : down(5) ? 3 : 0,
+    brake: supported && (pad!.axes[1] ?? 0) > 0.6 ? 1 : value(6),
+    jump: down(0),
+    grind: down(3),
+    trick: down(1)
+      ? 5
+      : down(2)
+        ? (pad!.axes[0] ?? 0) > 0.5
+          ? 4
+          : (pad!.axes[0] ?? 0) < -0.5
+            ? 2
+            : (pad!.axes[1] ?? 0) > 0.5
+              ? 3
+              : 1
+        : 0,
     reset: down(8),
     menu: down(9),
     back: down(1),

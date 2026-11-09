@@ -520,14 +520,14 @@ async function start() {
     if (lastController !== input.controller) {
       lastController = input.controller;
       $("control-legend").innerHTML = input.controller
-        ? "<kbd>A / RT</kbd> push <kbd>LS</kbd> steer / balance <kbd>B</kbd> brake <kbd>X / LT</kbd> ollie<br><kbd>Y</kbd> kickflip <kbd>LB</kbd> heelflip <kbd>RB</kbd> shove-it <kbd>Y + RB</kbd> varial <kbd>RS</kbd> camera <kbd>View</kbd> reset <kbd>Menu</kbd> garage"
+        ? "<kbd>Hold A / RT</kbd> push <kbd>LS</kbd> steer / balance · down brake <kbd>release A</kbd> ollie<br><kbd>X</kbd> flip <kbd>← + X</kbd> heel <kbd>↓ + X</kbd> shove-it <kbd>→ + X</kbd> varial <kbd>B</kbd> grab <kbd>Y</kbd> grind <kbd>RS</kbd> camera <kbd>View</kbd> reset <kbd>Menu</kbd> garage"
         : keyboardLegend;
       if (park.spots.length > 1)
         $("control-legend").innerHTML += input.controller
           ? " · <kbd>D-pad ↑</kbd> next spot"
           : " · <kbd>G</kbd> next spot";
       $("grind-instructions").textContent = input.controller
-        ? "50–50 · LEFT STICK BALANCE · X / LT TO POP OUT"
+        ? "50–50 · LEFT STICK BALANCE · RELEASE A TO POP OUT"
         : "50–50 · A / D BALANCE · SPACE TO POP OUT";
     }
     const active = dialog.open
@@ -638,6 +638,7 @@ async function start() {
     "50–50 grind landed",
     "Bail — lost the grind",
     "Varial kickflip",
+    "Grab",
   ];
   loadSession();
   engine.runRenderLoop(() => {
@@ -660,6 +661,7 @@ async function start() {
         const i = input.sample();
         if (i.reset && !lastReset) physics.reset();
         lastReset = i.reset;
+        physics.set_grind_input(+i.grind);
         physics.tick(i.push, i.turn, i.brake, i.jump, i.trick);
         orbit += (i.orbit / 120) * 1.7;
         accumulator -= 1 / 120;
@@ -677,13 +679,19 @@ async function start() {
       -Math.atan2(state[12], state[13]) - (state[20] ? state[21] * 0.15 : 0),
     );
     const rotation = boardTrickRotation(state[6], state[7]);
-    board.rotation.z = rotation.flip;
+    board.rotation.z =
+      rotation.flip +
+      (state[6] === 9
+        ? Math.sin(Math.min(state[7] / 0.5, 1) * Math.PI) * 0.3
+        : 0);
     board.rotation.y = rotation.shove;
     const mode = state[20]
       ? "crouch"
       : state[5] === 0
-        ? "jump"
-        : input.keys.has("Space")
+        ? state[6] === 9
+          ? "crouch"
+          : "jump"
+        : input.keys.has("Space") || input.crouching
           ? "crouch"
           : input.pushing
             ? "push"
@@ -753,7 +761,7 @@ async function start() {
       $("status").textContent = "FREE SKATE";
       $("trick").textContent = "Find your line.";
       $("hint").textContent = input.controller
-        ? "Xbox: A/RT push · X/LT ollie · Y kickflip · Y+RB varial · LB/RB tricks · Menu garage"
+        ? "Xbox: Hold A / RT to push · release A to ollie · X flip · B grab · hold Y grind · stick down brake"
         : (park.spots[selectedSpot]?.hint ?? "Find your line.");
     }
     const progress = goals.update(state);

@@ -2,6 +2,7 @@ export type Physics = {
   memory: WebAssembly.Memory;
   init(): void;
   reset(): void;
+  set_grind_input(held: number): void;
   tick(
     push: number,
     turn: number,
