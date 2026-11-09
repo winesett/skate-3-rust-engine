@@ -16,7 +16,8 @@
         skate<span>+</span><small>OPEN SESSION / 001</small>
       </div>
       <nav>
-        <button id="environments">Environment <kbd>E</kbd></button
+        <button id="connect-controller">Xbox controller</button
+        ><button id="environments">Environment <kbd>E</kbd></button
         ><button id="characters">Character <kbd>C</kbd></button
         ><button id="reset">Reset <kbd>R</kbd></button
         ><button id="fullscreen" aria-label="Toggle fullscreen">⛶</button>
@@ -25,6 +26,30 @@
     <div id="controller-status" role="status">
       Keyboard · connect Xbox and press A
     </div>
+    <dialog id="controller-panel" aria-labelledby="controller-title">
+      <h2 id="controller-title">Connect your Xbox controller</h2>
+      <p id="controller-detail" role="status">Waiting for a controller…</p>
+      <ol>
+        <li>
+          Connect with a USB data cable, or pair it in your computer’s Bluetooth
+          settings. For Bluetooth, hold the controller’s pairing button until
+          the Xbox light flashes.
+        </li>
+        <li>
+          Return to this game window and press <strong>A</strong> to let the
+          browser detect it.
+        </li>
+      </ol>
+      <p>
+        The browser uses controllers paired to your computer. This page cannot
+        open a Bluetooth pairing session itself.
+      </p>
+      <p>
+        A / RT push · X / LT ollie · Y kickflip · Y + RB varial · View reset ·
+        Menu garage.
+      </p>
+      <button id="controller-close" class="primary">Back to skating</button>
+    </dialog>
     <div id="loading">Building your session…</div>
     <section id="feedback" aria-live="polite">
       <span id="status">FREE SKATE</span>

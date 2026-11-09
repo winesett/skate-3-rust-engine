@@ -1,3 +1,4 @@
+import { spriteCharacter, type SpriteSpec } from "./sprite-character";
 import {
   AssetContainer,
   Scene,
@@ -13,6 +14,7 @@ export type Entry = {
   id: string;
   name: string;
   file?: string;
+  sprite?: SpriteSpec;
   scale: number;
   rotation: number;
   files?: { name: string; data: ArrayBuffer }[];
@@ -42,6 +44,7 @@ const aliases: Record<string, string[]> = {
   rightFoot: ["rightfoot", "footr"],
 };
 export class Character {
+  sprite?: Awaited<ReturnType<typeof spriteCharacter>>;
   root: TransformNode;
   container: AssetContainer;
   meshes: AbstractMesh[];
@@ -100,6 +103,10 @@ export class Character {
     this.root.rotation.y = (entry.rotation * Math.PI) / 180;
   }
   pose(mode: string, time: number, turn = 0) {
+    if (this.sprite) {
+      this.sprite.pose(mode);
+      return;
+    }
     if (this.lastMode !== mode) {
       this.active?.stop();
       for (const [n, q] of this.rest) n.rotationQuaternion = q.clone();
@@ -142,6 +149,10 @@ export class Character {
     }
   }
   previewAnimation(name: string) {
+    if (this.sprite) {
+      this.sprite.preview(name);
+      return;
+    }
     this.active?.stop();
     this.container.animationGroups.forEach((a) => a.stop());
     this.active = this.container.animationGroups.find((a) => a.name === name);
@@ -149,6 +160,7 @@ export class Character {
     this.lastMode = "preview";
   }
   dispose() {
+    this.sprite?.dispose();
     this.container.dispose();
     this.root.dispose();
   }
@@ -220,6 +232,13 @@ export async function loadCharacter(scene: Scene, entry: Entry) {
   )
     throw new Error("Character offset must be three finite numbers.");
 
+  if (entry.sprite) {
+    const sprite = await spriteCharacter(scene, entry.sprite);
+    const character = new Character(sprite.container, scene, entry);
+    character.sprite = sprite;
+    character.diagnostics = sprite.diagnostics;
+    return character;
+  }
   const s = await assetSource(entry);
   const container = await LoadAssetContainerAsync(s.file, scene, {
     rootUrl: s.root,

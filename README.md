@@ -124,3 +124,7 @@ GPL-3.0-only for this fork's game code, following upstream. Copyright (c) 2026 d
 ## Private local character catalog
 
 For internal artwork, keep files under `assets/characters/custom/local/` and entries in `assets/characters/custom/manifest.local.json` using the normal `{ "characters": [...] }` catalog format. Both paths are Git-ignored. `npm run dev` merges these entries into the local character selector. `npm run build` prepares a public catalog, removes stale local assets from public/characters, and excludes this folder and its entries from dist. Re-run `npm run assets` after a production build to restore the local dev catalog. Keep proprietary artwork under the local folder; do not place it beside distributable models.
+
+The local **PLUS — original animated cycles** entry preserves the original 60 rendered animation sheets. It is a camera-facing animated character within the 3D physics world, with original idle/walk/reaction playback; it is not a skeletal 3D animation conversion. The earlier 3D experimental entry remains available. C opens all original clips for preview. Private sheets remain excluded from public builds.
+
+Click **Connect Xbox** for pairing instructions and live detection. Plug in a USB data cable or pair the pad through the computer's Bluetooth settings, return to the game, and press A. The connection dialog pauses skating; A/B/Menu returns to play. The browser reads pads connected to the host computer and cannot perform OS Bluetooth pairing itself.

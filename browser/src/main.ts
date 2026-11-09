@@ -317,6 +317,16 @@ async function start() {
     }
   };
   const input = new Input();
+  const controllerDialog = $<HTMLDialogElement>("controller-panel");
+  $("connect-controller").onclick = () => {
+    input.clear();
+    controllerDialog.showModal();
+  };
+  $("controller-close").onclick = () => controllerDialog.close();
+  controllerDialog.addEventListener("close", () => {
+    input.clear();
+    canvas.focus();
+  });
   let goals = new SessionGoals(),
     best = 0,
     selectedSpot = 0,
@@ -495,6 +505,18 @@ async function start() {
   function controllerMenus() {
     const actions = input.menuActions();
     $("controller-status").textContent = input.controllerLabel;
+    $("connect-controller").textContent = input.controller
+      ? "Xbox connected ✓"
+      : "Connect Xbox";
+    $("controller-detail").textContent = input.controller
+      ? "Connected — press A or Back to skating to play."
+      : input.controllerLabel +
+        ". Pair or plug in your controller, then press A.";
+    if (controllerDialog.open) {
+      if (actions.accept || actions.back || actions.menu)
+        controllerDialog.close();
+      return;
+    }
     if (lastController !== input.controller) {
       lastController = input.controller;
       $("control-legend").innerHTML = input.controller
@@ -626,6 +648,7 @@ async function start() {
     controllerMenus();
     if (
       !dialog.open &&
+      !controllerDialog.open &&
       !environmentDialog.open &&
       !switchingEnvironment &&
       !document.hidden &&
@@ -797,13 +820,14 @@ async function start() {
           id: entry.id,
           name: entry.name,
           diagnostics: character.diagnostics,
+          animation: character.sprite?.state,
         };
       },
       get fps() {
         return engine.getFps();
       },
       get paused() {
-        return dialog.open || environmentDialog.open;
+        return dialog.open || environmentDialog.open || controllerDialog.open;
       },
       get environment() {
         return {
