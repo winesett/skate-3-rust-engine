@@ -132,3 +132,5 @@ mods/world-audio-test/logs/
 # Private character artwork stays on this machine; public builds omit it.
 /assets/characters/custom/local/
 /assets/characters/custom/manifest.local.json
+/browser/public/board-config.json
+/browser/public/board-deck.png

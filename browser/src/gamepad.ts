@@ -32,14 +32,15 @@ export function xboxState(pad: PadLike | undefined) {
     brake: supported && (pad!.axes[1] ?? 0) > 0.6 ? 1 : value(6),
     jump: down(0),
     grind: down(3),
+    // Keep X a kickflip while steering right or braking; variants use modifiers.
     trick: down(1)
       ? 5
       : down(2)
-        ? (pad!.axes[0] ?? 0) > 0.5
+        ? down(5)
           ? 4
-          : (pad!.axes[0] ?? 0) < -0.5
+          : down(4) || (pad!.axes[0] ?? 0) < -0.5
             ? 2
-            : (pad!.axes[1] ?? 0) > 0.5
+            : value(6) > 0.5
               ? 3
               : 1
         : 0,

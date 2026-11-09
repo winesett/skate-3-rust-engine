@@ -1,4 +1,12 @@
-import { cp, mkdir, readFile, writeFile, readdir, rm } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  readFile,
+  writeFile,
+  readdir,
+  rm,
+  access,
+} from "node:fs/promises";
 const source = new URL("../../assets/characters/custom/", import.meta.url),
   target = new URL("../public/characters/", import.meta.url);
 await mkdir(target, { recursive: true });
@@ -41,3 +49,16 @@ await writeFile(
   JSON.stringify(manifest, null, 2),
 );
 console.log(`Prepared ${manifest.characters.length} local characters`);
+
+const deck = "characters/local/plus/deanhouston-deck.png";
+let localDeck = false;
+if (!publicBuild)
+  try {
+    await access(new URL("local/plus/deanhouston-deck.png", source));
+    localDeck = true;
+  } catch {}
+await rm(new URL("../public/board-deck.png", import.meta.url), { force: true });
+await writeFile(
+  new URL("../public/board-config.json", import.meta.url),
+  JSON.stringify(localDeck ? { texture: deck } : {}),
+);

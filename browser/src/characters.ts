@@ -1,4 +1,5 @@
 import { spriteCharacter, type SpriteSpec } from "./sprite-character";
+import { PlusRider, type RiderState } from "./plus-rider";
 import {
   AssetContainer,
   Scene,
@@ -15,6 +16,11 @@ export type Entry = {
   name: string;
   file?: string;
   sprite?: SpriteSpec;
+  /**
+   * "plus": the real-3D PLUS skater (see plus-rider.ts). Its feet/legs/torso are posed
+   * procedurally in board space, so entry scale/rotation/offset are ignored for it.
+   */
+  rider?: "plus";
   scale: number;
   rotation: number;
   files?: { name: string; data: ArrayBuffer }[];
@@ -45,6 +51,7 @@ const aliases: Record<string, string[]> = {
 };
 export class Character {
   sprite?: Awaited<ReturnType<typeof spriteCharacter>>;
+  rider?: PlusRider;
   root: TransformNode;
   container: AssetContainer;
   meshes: AbstractMesh[];
@@ -59,6 +66,9 @@ export class Character {
     this.container = container;
     container.addAllToScene();
     this.root = new TransformNode("Character visual wrapper", scene);
+    // Re-bases the loaded parts into board space before the loader root is parented.
+    if (entry.rider === "plus")
+      this.rider = new PlusRider(container, scene, this.root);
     for (const node of container.rootNodes) node.parent = this.root;
     this.meshes = container.meshes;
     for (const [key, names] of Object.entries(aliases)) {
@@ -88,10 +98,19 @@ export class Character {
     if (!container.meshes.some((m) => m.getTotalVertices() > 0))
       throw new Error("Model contains no renderable mesh.");
     this.diagnostics = `${container.meshes.filter((m) => m.getTotalVertices() > 0).length} meshes · ${count} bones · ${container.animationGroups.length} clips\n${missing.length ? `Partial humanoid map: missing ${missing.join(", ")}. Embedded clips only where available.` : "Humanoid map compatible: relative skating poses enabled."}\n${count ? "Skin detected" : "No skin: rigid model; supply a rigged model for limb animation."}\nRetargeting assumes standard humanoid bone axes; inspect the preview.`;
+    if (this.rider)
+      this.diagnostics = `${container.meshes.filter((m) => m.getTotalVertices() > 0).length} original PLUS parts · procedural two-bone legs · regular stance (left foot forward)\nRider geometry is fixed to the board; scale, facing and offset are ignored.`;
     this.adjust(entry);
     container.animationGroups.forEach((a) => a.stop());
   }
   adjust(entry: Entry) {
+    if (this.rider) {
+      // Feet are anchored to the truck bolts in physics-root space at true scale.
+      this.root.position.setAll(0);
+      this.root.scaling.setAll(1);
+      this.root.rotation.setAll(0);
+      return;
+    }
     if (
       !Number.isFinite(entry.scale) ||
       entry.scale <= 0 ||
@@ -102,7 +121,15 @@ export class Character {
     this.root.scaling.setAll(entry.scale);
     this.root.rotation.y = (entry.rotation * Math.PI) / 180;
   }
-  pose(mode: string, time: number, turn = 0) {
+  /**
+   * `state` is optional physics data for riders that animate the feet in the air
+   * (grounded, trick id, seconds into the trick, speed); other characters ignore it.
+   */
+  pose(mode: string, time: number, turn = 0, state?: RiderState) {
+    if (this.rider) {
+      this.rider.update(mode, time, turn, state);
+      return;
+    }
     if (this.sprite) {
       this.sprite.pose(mode);
       return;
@@ -149,6 +176,7 @@ export class Character {
     }
   }
   previewAnimation(name: string) {
+    if (this.rider) return;
     if (this.sprite) {
       this.sprite.preview(name);
       return;
@@ -161,6 +189,7 @@ export class Character {
   }
   dispose() {
     this.sprite?.dispose();
+    this.rider?.dispose();
     this.container.dispose();
     this.root.dispose();
   }
@@ -292,6 +321,22 @@ export async function catalog(): Promise<Entry[]> {
     console.warn("Character storage unavailable", e);
   }
   const merged = new Map(list.map((e) => [e.id, e]));
-  saved.forEach((e) => merged.set(e.id, e));
+  saved.forEach((e) => {
+    const current = merged.get(e.id);
+    // Catalog artwork/animation updates must supersede stale saved definitions;
+    // keep the user's scale and facing, and preserve wholly imported models.
+    merged.set(
+      e.id,
+      current
+        ? {
+            ...e,
+            ...current,
+            scale: e.scale,
+            rotation: e.rotation,
+            offset: e.offset ?? current.offset,
+          }
+        : e,
+    );
+  });
   return [...merged.values()];
 }

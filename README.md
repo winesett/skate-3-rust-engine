@@ -21,11 +21,11 @@ Open `http://localhost:5173` on this computer. Vite provides TypeScript/CSS live
 | Push | W / Up | A or analog RT |
 | Turn | A / D | Left stick |
 | Brake | S / Down | Left stick down or LT |
-| Ollie | Space | Hold A to crouch, release A |
+| Ollie | Space | Hold A to push, release A |
 | Kickflip in air | J | X |
-| Varial kickflip in air | V | Stick right + X |
-| Heelflip in air | K | Stick left + X |
-| Pop shove-it in air | L | Stick down + X |
+| Varial kickflip in air | V | RB + X |
+| Heelflip in air | K | LB + X or stick left + X |
+| Pop shove-it in air | L | LT + X |
 | Grab in air | I | B |
 | Catch a grind | Descend aligned onto rail | Hold Y while descending onto rail |
 | Balance during 50–50 grind | A / D | Left stick |
@@ -93,7 +93,7 @@ npm test
 npm run build
 ```
 
-The separate Cargo workspace avoids compiling native Bevy, SDL, audio, and asset-conversion dependencies for the web. Lockfiles pin dependencies. After changing Rust dependencies, regenerate the bundled third-party notices with `python3 browser/scripts/dependency-notices.py`. `npm test` instantiates the actual shipped WASM in Node and checks movement, all tricks, scoring, a convex ramp, a solid wall, and reset. `npm run build` includes strict TypeScript checking. Rust source edits require rebuilding WASM and refreshing the page; they are not hot-reloaded.
+The separate Cargo workspace avoids compiling native Bevy, SDL, audio, and asset-conversion dependencies for the web. Lockfiles pin dependencies. After changing Rust dependencies, regenerate the bundled third-party notices with `python3 browser/scripts/dependency-notices.py`. Tests require Node 22.15+ (Node 24.16 tested). `npm test` instantiates the actual shipped WASM in Node and checks movement, all tricks, scoring, a convex ramp, a solid wall, and reset. `npm run build` includes strict TypeScript checking. Rust source edits require rebuilding WASM and refreshing the page; they are not hot-reloaded.
 
 ## Static deployment
 
@@ -127,8 +127,20 @@ GPL-3.0-only for this fork's game code, following upstream. Copyright (c) 2026 d
 
 For internal artwork, keep files under `assets/characters/custom/local/` and entries in `assets/characters/custom/manifest.local.json` using the normal `{ "characters": [...] }` catalog format. Both paths are Git-ignored. `npm run dev` merges these entries into the local character selector. `npm run build` prepares a public catalog, removes stale local assets from public/characters, and excludes this folder and its entries from dist. Re-run `npm run assets` after a production build to restore the local dev catalog. Keep proprietary artwork under the local folder; do not place it beside distributable models.
 
-The local **PLUS — original animated cycles** entry preserves the original 60 rendered animation sheets. It is a camera-facing animated character within the 3D physics world, with original idle/walk/reaction playback; it is not a skeletal 3D animation conversion. The earlier 3D experimental entry remains available. C opens all original clips for preview. Private sheets remain excluded from public builds.
+The local **PLUS — original animated cycles** entry preserves the original 60 rendered animation sheets. It is a camera-facing animated character within the 3D physics world, with original idle/walk/reaction playback; it is not a skeletal 3D animation conversion. The current 3D rider is the default; these original rendered cycles remain an optional workshop character. C opens all original clips for preview. Private sheets remain excluded from public builds.
 
 Click **Connect Xbox** for pairing instructions and live detection. Plug in a USB data cable or pair the pad through the computer's Bluetooth settings, return to the game, and press A. The connection dialog pauses skating; A/B/Menu returns to play. The browser reads pads connected to the host computer and cannot perform OS Bluetooth pairing itself.
 
 Xbox now uses a THPS-style face-button layout: hold A or RT to push, release A to ollie, X for flips, B for a basic grab, Y for rail capture. The directional X variants are this prototype's supported trick selection, not the full THPS trick catalog. Manuals, reverts, wallplants and shoulder-button spins are not implemented.
+
+3D PLUS is the startup character whenever its local catalog entry is present, even after a different character was used in the previous session. Other characters remain available during play.
+
+The skateboard now has a curved concave deck, nose/tail kicks, layered maple edges, recessed bolts, aluminum trucks, bushings, rounded wheels and rolling axles. The internal demo loads the generated DeanHouston graphic from `assets/characters/custom/local/plus/deanhouston-deck.png`; public builds omit that artwork and use an original abstract fallback. Keep X for kickflip while steering right or braking; RB+X deliberately selects varial, LT+X shove-it. Existing left+X heelflip also remains supported.
+
+## 3D PLUS rider
+
+The private local demo defaults to **PLUS — 3D rider (regular stance)** using the actual twelve-part model. Left/front sole is fixed at `[0, 0.015, 0.265]` and right/rear sole at `[0, 0.015, -0.265]`, aligned to the truck bolts. Procedural two-bone legs bend without squashing the plus-shaped body. Hold **A**, **RT**, or **W** to animate rear-foot pushes; the front foot stays planted. Releasing A ollies; both feet recover to the deck at takeoff and tuck for flips. A slight side-offset chase view makes the stance easier to see.
+
+The original mesh/face/mitts/shoes are preserved; eyes blink and the mouth reacts. This is a new procedural skate rig, not a retarget of the rendered sixty-clip library. Arms currently stay in their original hips pose. The short mascot legs use rubber-hose stretching (up to 1.8x) to reach the ground during a push. Goofy stance and hand-to-board grab IK are not implemented. Animation and model scale/facing controls are fixed for the rider to retain bolt alignment; other imported characters retain their controls.
+
+Local source/export: `assets/characters/custom/local/plus/export_plus_rider.py`, run with Blender. Private GLB tests skip when that internal asset is unavailable; generic motion tests still run.

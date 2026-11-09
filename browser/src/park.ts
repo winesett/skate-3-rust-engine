@@ -181,40 +181,4 @@ export function buildPark(scene: Scene, physics: Physics) {
   sign.material = sm;
   return { solids, materials: { dark, white, edge, orange } };
 }
-export function createBoard(scene: Scene) {
-  const root = new Mesh("Board assembly", scene);
-  const grip = new StandardMaterial("Griptape", scene);
-  grip.diffuseColor = Color3.FromHexString("#24342e");
-  const wood = new StandardMaterial("Maple", scene);
-  wood.diffuseColor = Color3.FromHexString("#c4a46c");
-  const wheelMat = new StandardMaterial("Urethane", scene);
-  wheelMat.diffuseColor = Color3.FromHexString("#efedce");
-  const deck = MeshBuilder.CreateBox(
-    "Maple deck",
-    { width: 0.25, height: 0.045, depth: 0.85 },
-    scene,
-  );
-  deck.parent = root;
-  deck.material = wood;
-  const top = MeshBuilder.CreateBox(
-    "Grip",
-    { width: 0.245, height: 0.008, depth: 0.81 },
-    scene,
-  );
-  top.position.y = 0.026;
-  top.parent = root;
-  top.material = grip;
-  for (const z of [-0.28, 0.28])
-    for (const x of [-0.16, 0.16]) {
-      const wheel = MeshBuilder.CreateCylinder(
-        "Wheel",
-        { height: 0.07, diameter: 0.105, tessellation: 12 },
-        scene,
-      );
-      wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(x, -0.075, z);
-      wheel.parent = root;
-      wheel.material = wheelMat;
-    }
-  return root;
-}
+export { createBoard } from "./board";

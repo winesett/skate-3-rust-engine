@@ -127,16 +127,20 @@ async function start() {
   board.getChildMeshes().forEach((m) => shadows.addShadowCaster(m));
   let entries = await catalog(),
     entry =
+      // 3D PLUS rider is the startup default each load; the saved selection is ignored.
+      entries.find((e) => e.id === "plus-rider") ??
+      entries.find((e) => e.id === "plus-original") ??
       entries.find(
         (e) => e.id === localStorage.getItem("skateplus-selection"),
-      ) ?? entries[0];
+      ) ??
+      entries[0];
   if (!entry) throw new Error("No character in manifest.");
   let character: Character;
   try {
     character = await loadCharacter(scene, entry);
   } catch (e) {
     console.warn("Saved model failed; loading original", e);
-    entry = entries[0];
+    entry = entries.find((x) => x.id === "yard-skater") ?? entries[0];
     character = await loadCharacter(scene, entry);
   }
   character.root.parent = skaterRoot;
@@ -156,6 +160,7 @@ async function start() {
   pc.attachControl(previewCanvas, true);
   pc.lowerRadiusLimit = 1;
   pc.upperRadiusLimit = 8;
+  createBoard(ps);
   new HemisphericLight("Preview sky", new Vector3(0, 1, 0), ps);
   const floor = MeshBuilder.CreateGround(
     "Preview ground",
@@ -165,6 +170,7 @@ async function start() {
   const fm = new StandardMaterial("Preview mat", ps);
   fm.diffuseColor = new Color3(0.16, 0.24, 0.19);
   floor.material = fm;
+  floor.position.y = -0.16;
   let preview: Character | undefined,
     pending: Entry = { ...entry },
     loadingModel = false,
@@ -204,6 +210,8 @@ async function start() {
       preview?.dispose();
       preview = next;
       pending = { ...e };
+      scale.disabled = !!e.rider;
+      rotation.disabled = !!e.rider;
       scale.value = String(e.scale);
       rotation.value = String(e.rotation);
       adjust();
@@ -357,7 +365,7 @@ async function start() {
     const spot = park.spots[selectedSpot];
     physics.set_spawn(...spot.position, spot.heading);
     input.clear();
-    orbit = 0;
+    orbit = character.rider ? -0.55 : 0;
     accumulator = 0;
     event = -1;
     feedbackUntil = 0;
@@ -486,7 +494,7 @@ async function start() {
       if (index < 0) environmentEntries.push(candidate);
       else environmentEntries[index] = candidate;
       $("environment-name").textContent = park.name;
-      orbit = 0;
+      orbit = character.rider ? -0.55 : 0;
       accumulator = 0;
       event = -1;
       feedbackUntil = 0;
@@ -520,7 +528,7 @@ async function start() {
     if (lastController !== input.controller) {
       lastController = input.controller;
       $("control-legend").innerHTML = input.controller
-        ? "<kbd>Hold A / RT</kbd> push <kbd>LS</kbd> steer / balance · down brake <kbd>release A</kbd> ollie<br><kbd>X</kbd> flip <kbd>← + X</kbd> heel <kbd>↓ + X</kbd> shove-it <kbd>→ + X</kbd> varial <kbd>B</kbd> grab <kbd>Y</kbd> grind <kbd>RS</kbd> camera <kbd>View</kbd> reset <kbd>Menu</kbd> garage"
+        ? "<kbd>Hold A / RT</kbd> push <kbd>LS</kbd> steer / balance · down brake <kbd>release A</kbd> ollie<br><kbd>X</kbd> flip <kbd>LB / ← + X</kbd> heel <kbd>LT + X</kbd> shove-it <kbd>RB + X</kbd> varial <kbd>B</kbd> grab <kbd>Y</kbd> grind <kbd>RS</kbd> camera <kbd>View</kbd> reset <kbd>Menu</kbd> garage"
         : keyboardLegend;
       if (park.spots.length > 1)
         $("control-legend").innerHTML += input.controller
@@ -625,7 +633,7 @@ async function start() {
     time = 0,
     event = -1,
     feedbackUntil = 0,
-    orbit = 0,
+    orbit = character.rider ? -0.55 : 0,
     state = new Float32Array(24),
     lastReset = false;
   const names = [
@@ -685,20 +693,33 @@ async function start() {
         ? Math.sin(Math.min(state[7] / 0.5, 1) * Math.PI) * 0.3
         : 0);
     board.rotation.y = rotation.shove;
+    if (
+      !dialog.open &&
+      !environmentDialog.open &&
+      !controllerDialog.open &&
+      !paused
+    )
+      for (const wheel of board.metadata?.rollingWheels ?? [])
+        wheel.rotation.y -= (state[4] * dt) / 0.04;
     const mode = state[20]
       ? "crouch"
       : state[5] === 0
         ? state[6] === 9
           ? "crouch"
           : "jump"
-        : input.keys.has("Space") || input.crouching
-          ? "crouch"
-          : input.pushing
-            ? "push"
+        : input.pushing
+          ? "push"
+          : input.keys.has("Space") || input.crouching
+            ? "crouch"
             : state[4] > 0.2
               ? "ride"
               : "idle";
-    character.pose(mode, time, state[11]);
+    character.pose(mode, time, state[11], {
+      grounded: state[5] !== 0,
+      trick: state[6],
+      trickTime: state[7],
+      speed: state[4],
+    });
     const target = skaterRoot.position.add(new Vector3(0, 0.85, 0));
     let desired = new Vector3(state[15], state[16], state[17]);
     if (Math.abs(orbit) > 0.01)
@@ -829,6 +850,7 @@ async function start() {
           name: entry.name,
           diagnostics: character.diagnostics,
           animation: character.sprite?.state,
+          rider: character.rider?.diagnostics(),
         };
       },
       get fps() {
